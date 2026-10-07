@@ -144,6 +144,9 @@ body{padding-left:210px}
 #nav button.on{background:#2F5BEA;color:#fff}
 #tt{margin-left:0;margin-top:auto}}
 .wrap.emb{max-width:none}
+.pprev{width:64px;height:64px;object-fit:cover;border-radius:10px;border:1px solid var(--line);flex:none}
+.sv .row{display:flex;gap:14px;align-items:flex-start}.sv .bd{flex:1;min-width:0}
+.sv .pic{flex:none;display:block;width:84px;height:84px;border-radius:10px;object-fit:cover;border:1px solid var(--line);background:#F3F5F9}
 .grp .gh{width:100%;display:flex;justify-content:space-between;align-items:center;font-weight:700}
 .grp .gh i{font-style:normal;font-size:11px;transition:transform .15s}
 .grp.closed .gh i{transform:rotate(-90deg)}.grp.closed .gc{display:none}
@@ -158,7 +161,7 @@ body{padding-left:210px}
 <nav id="nav"></nav>
 <div class="wrap" data-page="calc" id="savebar" hidden><div class="bar">
 <div><label>产品名称 / 版本备注</label><input id="pname" placeholder="例如：瑜伽垫 v1"></div>
-<button class="btn" id="saveBtn">保存此产品</button></div><div id="toast"></div></div>
+<div><label>产品图片链接（可选，https 开头）</label><input id="pimg" placeholder="https://…/图片.jpg"></div><img id="pprev" class="pprev" referrerpolicy="no-referrer" alt="" hidden><button class="btn" id="saveBtn">保存此产品</button></div><div id="toast"></div></div>
 
 <div class="wrap" data-page="calc" data-title="测算表">
 
@@ -352,7 +355,7 @@ const SUPABASE_URL='https://ejvgerfwwlitxboiqqkw.supabase.co';
 const SUPABASE_ANON_KEY='sb_publishable_5H4_a4xe0Mfys7AaTjs0cw_OnRyFVni';
 // ====== 新增 html 板块：每多一个文件，就在下面加一行（id 不能重复）======
 const EXTRA_PAGES=[
- //{id:'assess',title:'Overall Assessment',file:'Overall Assessment.html'},
+ // {id:'assess',title:'Overall Assessment',file:'Overall Assessment.html'},
  // {id:'demo',title:'新板块名字',file:'文件名.html'},
 ];
 // =================================================================
@@ -383,33 +386,37 @@ g('nav').onclick=e=>{const b=e.target.closest('button');if(!b)return;
  else if(b.id==='out'){sb.auth.signOut()}
  else if(b.dataset.g!==undefined){b.parentElement.classList.toggle('closed')}
  else{show(b.dataset.p);if(b.dataset.p==='saved')load()}};
+const ok=u=>/^https?:\/\/\S+$/i.test(u||'');
+function pv(){const u=g('pimg').value.trim(),im=g('pprev');if(ok(u)){im.src=u;im.hidden=false}else{im.hidden=true;im.removeAttribute('src')}}
 const toast=t=>{g('toast').textContent=t;setTimeout(()=>{if(g('toast').textContent===t)g('toast').textContent=''},4000)};
-const collect=()=>{const vals={};document.querySelectorAll('input[id],select[id]').forEach(e=>{if(['pname','q','gemail','gpw'].includes(e.id))return;vals[e.id]=e.type==='checkbox'?e.checked:e.value});
+const collect=()=>{const vals={};document.querySelectorAll('input[id],select[id]').forEach(e=>{if(['pname','q','gemail','gpw','pimg'].includes(e.id))return;vals[e.id]=e.type==='checkbox'?e.checked:e.value});
  return{vals,ts:[...document.querySelectorAll('.ts')].map(e=>e.value),ta:[...document.querySelectorAll('.ta')].map(e=>e.value)}};
 const apply=d=>{Object.entries(d.vals||{}).forEach(([id,v])=>{const e=g(id);if(!e)return;e.type==='checkbox'?e.checked=!!v:e.value=v});
  document.querySelectorAll('.ts').forEach((e,i)=>{if(d.ts&&d.ts[i]!=null)e.value=d.ts[i]});
- document.querySelectorAll('.ta').forEach((e,i)=>{if(d.ta&&d.ta[i]!=null)e.value=d.ta[i]});calc()};
+ document.querySelectorAll('.ta').forEach((e,i)=>{if(d.ta&&d.ta[i]!=null)e.value=d.ta[i]});g('pimg').value=(d.vals&&d.vals._img)||'';pv();calc()};
 const gate=(html,msg)=>{g('gate').hidden=false;g('gbody').innerHTML=html;g('gmsg').textContent=msg||''};
 const render=()=>{const q=g('q').value.trim().toLowerCase();
  const rows=all.filter(d=>!q||String(d.name).toLowerCase().includes(q)||String(d.by_email||'').toLowerCase().includes(q));
  if(!rows.length){g('list').innerHTML='<div class="empty">'+(all.length?'没有匹配的产品':'还没有保存的产品。在“测算表”页填完后点“保存此产品”。')+'</div>';return}
- g('list').innerHTML=rows.map(d=>`<div class="sv"><h3>${esc(d.name)}</h3><div class="meta">${new Date(d.created_at).toLocaleString('zh-CN',{hour12:false})}${d.by_email?' · '+esc(d.by_email):''}</div>
- <div class="m">${(d.sum||[]).map(s=>`<div><div class="k">${esc(s[0])}</div><div class="v">${esc(s[1])}</div></div>`).join('')}</div>
+ g('list').innerHTML=rows.map(d=>`<div class="sv"><div class="row">${(u=>ok(u)?`<a href="${esc(u)}" target="_blank" rel="noopener"><img class="pic" src="${esc(u)}" referrerpolicy="no-referrer" loading="lazy" alt="" onerror="this.style.visibility='hidden'"></a>`:'<div class="pic"></div>')(d.vals&&d.vals._img)}<div class="bd"><h3>${esc(d.name)}</h3><div class="meta">${new Date(d.created_at).toLocaleString('zh-CN',{hour12:false})}${d.by_email?' · '+esc(d.by_email):''}</div>
+ <div class="m">${(d.sum||[]).map(s=>`<div><div class="k">${esc(s[0])}</div><div class="v">${esc(s[1])}</div></div>`).join('')}</div></div></div>
  <div class="act"><button class="btn ghost" data-a="load" data-i="${esc(d.id)}">载入到测算表</button>${canWrite?`<button class="btn del" data-a="del" data-i="${esc(d.id)}">删除</button>`:''}</div></div>`).join('')};
 async function load(){if(!sb||g('gate').hidden===false)return;
  const{data,error}=await sb.from('products').select('*').order('created_at',{ascending:false});
  if(error){g('list').innerHTML='<div class="empty">读取失败：'+esc(error.message)+'</div>';return}
  all=data;render()}
-g('q').oninput=render;
+g('q').oninput=render;g('pimg').oninput=pv;g('pprev').onerror=()=>{g('pprev').hidden=true};
 g('list').onclick=async e=>{const b=e.target.closest('button');if(!b)return;const d=all.find(x=>x.id===b.dataset.i);if(!d)return;
  if(b.dataset.a==='load'){apply(d);g('pname').value=d.name;show('calc');window.scrollTo(0,0)}
  else if(b.dataset.a==='del'){if(b.dataset.s!=='1'){b.dataset.s='1';b.textContent='再点一次确认删除';return}
   const{error}=await sb.from('products').delete().eq('id',d.id);if(error)b.textContent='删除失败';else load()}};
 g('saveBtn').onclick=async()=>{const name=g('pname').value.trim();
  if(!name){toast('请先填写产品名称');return}
+ const img=g('pimg').value.trim();if(img&&!ok(img)){toast('图片链接需以 http:// 或 https:// 开头');return}
+ const c=collect();if(img)c.vals._img=img;
  const sum=[...document.querySelectorAll('#hero .card')].map(c=>[c.querySelector('.k').textContent,c.querySelector('.v').textContent,c.querySelector('.n').textContent]);
  g('saveBtn').disabled=true;
- const{error}=await sb.from('products').insert({name,...collect(),sum,by_email:email});
+ const{error}=await sb.from('products').insert({name,...c,sum,by_email:email});
  toast(error?'保存失败：'+error.message:'已保存「'+name+'」，可在“已保存产品”页查看');
  g('saveBtn').disabled=false};
 async function boot(s){
