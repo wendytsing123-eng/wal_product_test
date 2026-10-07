@@ -144,11 +144,16 @@ body{padding-left:210px}
 #nav button.on{background:#2F5BEA;color:#fff}
 #pdf{margin-left:0;margin-top:auto}#tt{margin-left:0;margin-top:0}}
 .wrap.emb{max-width:none}
+#ptitle{display:none}
 #pdf{margin-left:auto}#tt{margin-left:0}
 .editbar{margin-top:8px;padding:8px 12px;border-radius:10px;background:#FFF6E0;color:#8A5A00;font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .editbar .btn{padding:5px 12px;font-size:12px}
 :root[data-theme="dark"] .editbar{background:#3B3118;color:#F5C25B}
 @media print{
+body.pp header.top{display:none!important}
+body.pp #ptitle{display:flex!important;align-items:center;gap:16px;padding:6px 0 14px}
+#ptimg{width:76px;height:76px;object-fit:cover;border-radius:10px;border:1px solid #ddd;flex:none}
+#ptname{margin:0;font-size:26px;line-height:1.3;color:#111}
 @page{margin:12mm}
 #nav,#savebar,#gate,#editBar,#ro,.act,.btn,#toast,#q,.bar{display:none!important}
 body{padding-left:0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -168,6 +173,7 @@ body{padding-left:0!important;-webkit-print-color-adjust:exact;print-color-adjus
 
 </style></head><body><header class="top"><div><h1>Walmart产品综合测算</h1><div class="sub"><span>竞品定价</span><span>单件利润</span><span>类目日销</span><span>首批备货</span><span>首年广告预算</span></div></div></header>
 <div id="gate"><div class="box"><h2>Walmart产品综合测算</h2><div id="gbody"><p>加载中…</p></div><div id="gmsg"></div></div></div>
+<div id="ptitle" class="wrap"><img id="ptimg" referrerpolicy="no-referrer" alt="" hidden><h1 id="ptname"></h1></div>
 <nav id="nav"></nav>
 <div class="wrap" data-page="calc" id="savebar" hidden><div class="bar">
 <div><label>产品名称 / 版本备注</label><input id="pname" placeholder="例如：瑜伽垫 v1"></div>
@@ -398,10 +404,12 @@ g('nav').onclick=e=>{const b=e.target.closest('button');if(!b)return;
  else if(b.dataset.g!==undefined){b.parentElement.classList.toggle('closed')}
  else{show(b.dataset.p);if(b.dataset.p==='saved')load()}};
 const ok=u=>/^https?:\/\/\S+$/i.test(u||'');
-function pv(){const u=g('pimg').value.trim(),im=g('pprev');if(ok(u)){im.src=u;im.hidden=false}else{im.hidden=true;im.removeAttribute('src')}}
-let pt=null;
-addEventListener('beforeprint',()=>{pt=R.dataset.theme;R.dataset.theme='light'});
-addEventListener('afterprint',()=>{if(pt){R.dataset.theme=pt;pt=null;lab()}});
+function pv(){const u=g('pimg').value.trim(),im=g('pprev'),ti=g('ptimg');if(ok(u)){im.src=u;im.hidden=false;ti.src=u;ti.hidden=false}else{im.hidden=true;im.removeAttribute('src');ti.hidden=true;ti.removeAttribute('src')}}
+let pt=null,ot='';
+addEventListener('beforeprint',()=>{pt=R.dataset.theme;R.dataset.theme='light';
+ const nm=g('pname').value.trim();ot=document.title;
+ if(cur==='calc'&&nm){g('ptname').textContent=nm;document.body.classList.add('pp');document.title=nm}});
+addEventListener('afterprint',()=>{if(pt){R.dataset.theme=pt;pt=null;lab()}document.body.classList.remove('pp');if(ot){document.title=ot;ot=''}});
 function exportPdf(){const f=document.querySelector('[data-page="'+cur+'"] iframe');
  if(f&&!f.hasAttribute('data-src')){try{f.contentWindow.focus();f.contentWindow.print();return}catch(_){}}
  window.print()}
