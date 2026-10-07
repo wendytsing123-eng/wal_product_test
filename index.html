@@ -144,6 +144,14 @@ body{padding-left:210px}
 #nav button.on{background:#2F5BEA;color:#fff}
 #tt{margin-left:0;margin-top:auto}}
 .wrap.emb{max-width:none}
+.grp .gh{width:100%;display:flex;justify-content:space-between;align-items:center;font-weight:700}
+.grp .gh i{font-style:normal;font-size:11px;transition:transform .15s}
+.grp.closed .gh i{transform:rotate(-90deg)}.grp.closed .gc{display:none}
+.gc{display:flex;flex-direction:column;gap:4px;margin:4px 0 8px 10px;padding-left:8px;border-left:2px solid var(--line)}
+#nav .sub{font-size:13px}#nav .gh.act{color:#2F5BEA}
+:root[data-theme="dark"] #nav .gh.act{color:#8DA7FF}
+.emb iframe{width:100%;height:calc(100vh - 24px);border:0;background:#fff;display:block}
+@media(max-width:860px){.grp,.gc{display:contents}.gh{display:none!important}.emb iframe{height:calc(100vh - 90px)}}
 
 </style></head><body><header class="top"><div><h1>Walmart产品综合测算</h1><div class="sub"><span>竞品定价</span><span>单件利润</span><span>类目日销</span><span>首批备货</span><span>首年广告预算</span></div></div></header>
 <div id="gate"><div class="box"><h2>Walmart产品综合测算</h2><div id="gbody"><p>加载中…</p></div><div id="gmsg"></div></div></div>
@@ -152,7 +160,7 @@ body{padding-left:210px}
 <div><label>产品名称 / 版本备注</label><input id="pname" placeholder="例如：瑜伽垫 v1"></div>
 <button class="btn" id="saveBtn">保存此产品</button></div><div id="toast"></div></div>
 
-<div class="wrap" data-page="calc" data-title="综合测算表">
+<div class="wrap" data-page="calc" data-title="测算表">
 
 <h2>1 产品与成本</h2>
 <div class="panel"><div class="g">
@@ -351,7 +359,7 @@ const EXTRA_PAGES=[
 (function(){
 const g=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-EXTRA_PAGES.forEach(p=>{const d=document.createElement('div');d.className='wrap emb';d.dataset.page=p.id;d.dataset.title=p.title;d.hidden=true;const f=document.createElement('iframe');f.dataset.src=encodeURI(p.file);f.style.cssText='width:100%;height:calc(100vh - 150px);min-height:480px;border:0;background:#fff';d.appendChild(f);document.body.appendChild(d)});
+EXTRA_PAGES.forEach(p=>{const d=document.createElement('div');d.className='wrap emb';d.dataset.page=p.id;d.dataset.title=p.title;d.hidden=true;const f=document.createElement('iframe');f.dataset.src=encodeURI(p.file);d.appendChild(f);document.body.appendChild(d)});
 const pages=[...new Set([...document.querySelectorAll('[data-page]')].map(e=>e.dataset.page))],titles={};
 document.querySelectorAll('[data-title]').forEach(e=>titles[e.dataset.page]=e.dataset.title);
 let cur=pages[0],canWrite=false,all=[],email='',sb=null;
@@ -359,12 +367,21 @@ const R=document.documentElement,lab=()=>g('tt').textContent=R.dataset.theme==='
 function show(p){if(!pages.includes(p))p=pages[0];cur=p;
  document.querySelectorAll('[data-page="'+p+'"] iframe[data-src]').forEach(f=>{f.src=f.dataset.src;f.removeAttribute('data-src')});
  document.querySelectorAll('[data-page]').forEach(e=>{e.hidden=e.dataset.page!==p||(e.id==='savebar'&&!canWrite)});
- document.querySelectorAll('#nav button[data-p]').forEach(b=>b.classList.toggle('on',b.dataset.p===p))}
-g('nav').innerHTML=pages.map(p=>`<button data-p="${esc(p)}">${esc(titles[p]||p)}</button>`).join('')+'<button id="tt"></button><button id="out" hidden>退出登录</button>';
+ document.querySelectorAll('#nav button[data-p]').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+ if(hd)hd.hidden=!inG(p);
+ document.querySelectorAll('#nav .gh').forEach(b=>b.classList.toggle('act',inG(p)===b.dataset.g))}
+const GROUPS={'综合测算表':['calc','saved']},inG=p=>Object.keys(GROUPS).find(k=>GROUPS[k].includes(p)),hd=document.querySelector('header.top');
+const done={};let navH='';
+pages.forEach(p=>{const k=inG(p);
+ if(!k){navH+=`<button data-p="${esc(p)}">${esc(titles[p]||p)}</button>`;return}
+ if(done[k])return;done[k]=1;
+ navH+=`<div class="grp"><button class="gh" data-g="${esc(k)}">${esc(k)}<i>▾</i></button><div class="gc">`+GROUPS[k].filter(x=>pages.includes(x)).map(x=>`<button class="sub" data-p="${esc(x)}">${esc(titles[x]||x)}</button>`).join('')+'</div></div>'});
+g('nav').innerHTML=navH+'<button id="tt"></button><button id="out" hidden>退出登录</button>';
 lab();show(cur);
 g('nav').onclick=e=>{const b=e.target.closest('button');if(!b)return;
  if(b.id==='tt'){R.dataset.theme=R.dataset.theme==='dark'?'light':'dark';try{localStorage.setItem('theme',R.dataset.theme)}catch(_){}lab()}
  else if(b.id==='out'){sb.auth.signOut()}
+ else if(b.dataset.g!==undefined){b.parentElement.classList.toggle('closed')}
  else{show(b.dataset.p);if(b.dataset.p==='saved')load()}};
 const toast=t=>{g('toast').textContent=t;setTimeout(()=>{if(g('toast').textContent===t)g('toast').textContent=''},4000)};
 const collect=()=>{const vals={};document.querySelectorAll('input[id],select[id]').forEach(e=>{if(['pname','q','gemail','gpw'].includes(e.id))return;vals[e.id]=e.type==='checkbox'?e.checked:e.value});
