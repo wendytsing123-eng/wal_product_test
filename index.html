@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><div class="wrap" data-page="saved" data-title="已保存产品" hidden>
 <div class="bar"><div><label>搜索产品</label><input id="q" placeholder="输入产品名称筛选"></div></div>
@@ -352,7 +351,7 @@ g('nav').onclick=e=>{const b=e.target.closest('button');if(!b)return;
  else if(b.id==='out'){sb.auth.signOut()}
  else{show(b.dataset.p);if(b.dataset.p==='saved')load()}};
 const toast=t=>{g('toast').textContent=t;setTimeout(()=>{if(g('toast').textContent===t)g('toast').textContent=''},4000)};
-const collect=()=>{const vals={};document.querySelectorAll('input[id],select[id]').forEach(e=>{if(['pname','q','gemail'].includes(e.id))return;vals[e.id]=e.type==='checkbox'?e.checked:e.value});
+const collect=()=>{const vals={};document.querySelectorAll('input[id],select[id]').forEach(e=>{if(['pname','q','gemail','gpw'].includes(e.id))return;vals[e.id]=e.type==='checkbox'?e.checked:e.value});
  return{vals,ts:[...document.querySelectorAll('.ts')].map(e=>e.value),ta:[...document.querySelectorAll('.ta')].map(e=>e.value)}};
 const apply=d=>{Object.entries(d.vals||{}).forEach(([id,v])=>{const e=g(id);if(!e)return;e.type==='checkbox'?e.checked=!!v:e.value=v});
  document.querySelectorAll('.ts').forEach((e,i)=>{if(d.ts&&d.ts[i]!=null)e.value=d.ts[i]});
@@ -382,10 +381,12 @@ g('saveBtn').onclick=async()=>{const name=g('pname').value.trim();
  g('saveBtn').disabled=false};
 async function boot(s){
  if(!s){g('out').hidden=true;canWrite=false;
-  gate('<p>请输入邮箱，我会发一个登录链接给你（无需密码）。只有被添加为成员的邮箱才能进入。</p><input id="gemail" type="email" placeholder="you@example.com"><button class="btn" id="gsend">发送登录链接</button>');
-  g('gsend').onclick=async()=>{const em=g('gemail').value.trim().toLowerCase();if(!em)return;
-   const{error}=await sb.auth.signInWithOtp({email:em,options:{emailRedirectTo:location.href.split('#')[0]}});
-   g('gmsg').textContent=error?'发送失败：'+error.message:'已发送，请到邮箱点击链接（可能在垃圾邮件里）。'};return}
+  gate('<p>请输入邮箱和密码登录。账号由管理员在后台创建。</p><input id="gemail" type="email" placeholder="you@example.com"><input id="gpw" type="password" placeholder="密码"><button class="btn" id="gsend">登录</button>');
+  const go=async()=>{const em=g('gemail').value.trim().toLowerCase(),pw=g('gpw').value;if(!em||!pw)return;
+   g('gmsg').textContent='登录中…';
+   const{error}=await sb.auth.signInWithPassword({email:em,password:pw});
+   g('gmsg').textContent=error?'登录失败：'+error.message:''};
+  g('gsend').onclick=go;g('gpw').onkeydown=e=>{if(e.key==='Enter')go()};return}
  email=(s.user.email||'').toLowerCase();
  const{data:m,error}=await sb.from('members').select('role').eq('email',email).maybeSingle();
  if(error||!m){gate('<p>'+esc(email)+' 还没有被授权访问。请联系管理员把这个邮箱添加为成员。</p><button class="btn" id="gout">退出登录</button>');g('gout').onclick=()=>sb.auth.signOut();return}
