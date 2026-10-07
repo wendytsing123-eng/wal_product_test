@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><div class="wrap" data-page="saved" data-title="已保存产品" hidden>
-<div class="bar"><div><label>搜索产品</label><input id="q" placeholder="输入产品名称筛选"></div></div>
+<div class="bar"><div><label>搜索产品</label><input id="q" placeholder="输入产品名称或保存人邮箱筛选"></div></div>
 <div id="ro" class="note" hidden>当前为只读查看权限：可浏览已保存的产品，不能保存或删除。</div>
 <div id="list" style="margin-top:14px"><div class="empty">加载中…</div></div></div>
 <script>try{var t=localStorage.getItem("theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.dataset.theme=t}catch(e){}</script>
@@ -140,8 +140,17 @@ td.d{font-family:var(--sans);text-align:left;font-size:13px;line-height:1.7;whit
 #gate .box{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;box-shadow:var(--shadow)}
 #gate h2{margin:0 0 6px;font-size:18px}#gate p{margin:0 0 14px;font-size:13px;color:var(--soft);line-height:1.6}
 #gate input{width:100%;margin-bottom:10px}#gate .btn{width:100%}#gmsg{margin-top:10px;font-size:13px;color:#0E8A5F;min-height:18px}
+@media(min-width:861px){
+body{padding-left:210px}
+#nav{position:fixed;left:0;top:0;bottom:0;width:210px;max-width:none;margin:0;padding:18px 12px;flex-direction:column;overflow-y:auto;background:var(--panel);border-right:1px solid var(--line);z-index:50}
+#nav button{text-align:left;border-radius:10px;border-color:transparent;background:transparent}
+#nav button:hover{background:rgba(47,91,234,.1)}
+#nav button.on{background:#2F5BEA;color:#fff}
+#tt{margin-left:0;margin-top:auto}}
+.wrap.emb{max-width:none}
+
 </style></head><body><header class="top"><div><h1>Walmart产品综合测算表</h1><div class="sub"><span>竞品定价</span><span>单件利润</span><span>类目日销</span><span>首批备货</span><span>首年广告预算</span></div></div></header>
-<div id="gate"><div class="box"><h2>Walmart产品综合测算表</h2><div id="gbody"><p>加载中…</p></div><div id="gmsg"></div></div></div>
+<div id="gate"><div class="box"><h2>Walmart产品综合测算</h2><div id="gbody"><p>加载中…</p></div><div id="gmsg"></div></div></div>
 <nav id="nav"></nav>
 <div class="wrap" data-page="calc" id="savebar" hidden><div class="bar">
 <div><label>产品名称 / 版本备注</label><input id="pname" placeholder="例如：瑜伽垫 v1"></div>
@@ -333,15 +342,22 @@ document.addEventListener('input',calc);document.addEventListener('change',calc)
 // ====== 只需要改这两行（Supabase → Project Settings → API）======
 const SUPABASE_URL='https://ejvgerfwwlitxboiqqkw.supabase.co';
 const SUPABASE_ANON_KEY='sb_publishable_5H4_a4xe0Mfys7AaTjs0cw_OnRyFVni';
+// ====== 新增 html 板块：每多一个文件，就在下面加一行（id 不能重复）======
+const EXTRA_PAGES=[
+ // {id:'assess',title:'Overall Assessment',file:'Overall Assessment.html'},
+ // {id:'demo',title:'新板块名字',file:'文件名.html'},
+];
 // =================================================================
 (function(){
 const g=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+EXTRA_PAGES.forEach(p=>{const d=document.createElement('div');d.className='wrap emb';d.dataset.page=p.id;d.dataset.title=p.title;d.hidden=true;const f=document.createElement('iframe');f.dataset.src=encodeURI(p.file);f.style.cssText='width:100%;height:calc(100vh - 150px);min-height:480px;border:0;background:#fff';d.appendChild(f);document.body.appendChild(d)});
 const pages=[...new Set([...document.querySelectorAll('[data-page]')].map(e=>e.dataset.page))],titles={};
 document.querySelectorAll('[data-title]').forEach(e=>titles[e.dataset.page]=e.dataset.title);
 let cur=pages[0],canWrite=false,all=[],email='',sb=null;
 const R=document.documentElement,lab=()=>g('tt').textContent=R.dataset.theme==='dark'?'☀ 浅色':'🌙 深色';
 function show(p){if(!pages.includes(p))p=pages[0];cur=p;
+ document.querySelectorAll('[data-page="'+p+'"] iframe[data-src]').forEach(f=>{f.src=f.dataset.src;f.removeAttribute('data-src')});
  document.querySelectorAll('[data-page]').forEach(e=>{e.hidden=e.dataset.page!==p||(e.id==='savebar'&&!canWrite)});
  document.querySelectorAll('#nav button[data-p]').forEach(b=>b.classList.toggle('on',b.dataset.p===p))}
 g('nav').innerHTML=pages.map(p=>`<button data-p="${esc(p)}">${esc(titles[p]||p)}</button>`).join('')+'<button id="tt"></button><button id="out" hidden>退出登录</button>';
@@ -358,7 +374,7 @@ const apply=d=>{Object.entries(d.vals||{}).forEach(([id,v])=>{const e=g(id);if(!
  document.querySelectorAll('.ta').forEach((e,i)=>{if(d.ta&&d.ta[i]!=null)e.value=d.ta[i]});calc()};
 const gate=(html,msg)=>{g('gate').hidden=false;g('gbody').innerHTML=html;g('gmsg').textContent=msg||''};
 const render=()=>{const q=g('q').value.trim().toLowerCase();
- const rows=all.filter(d=>!q||String(d.name).toLowerCase().includes(q));
+ const rows=all.filter(d=>!q||String(d.name).toLowerCase().includes(q)||String(d.by_email||'').toLowerCase().includes(q));
  if(!rows.length){g('list').innerHTML='<div class="empty">'+(all.length?'没有匹配的产品':'还没有保存的产品。在“测算表”页填完后点“保存此产品”。')+'</div>';return}
  g('list').innerHTML=rows.map(d=>`<div class="sv"><h3>${esc(d.name)}</h3><div class="meta">${new Date(d.created_at).toLocaleString('zh-CN',{hour12:false})}${d.by_email?' · '+esc(d.by_email):''}</div>
  <div class="m">${(d.sum||[]).map(s=>`<div><div class="k">${esc(s[0])}</div><div class="v">${esc(s[1])}</div></div>`).join('')}</div>
@@ -390,7 +406,7 @@ async function boot(s){
  email=(s.user.email||'').toLowerCase();
  const{data:m,error}=await sb.from('members').select('role').eq('email',email).maybeSingle();
  if(error||!m){gate('<p>'+esc(email)+' 还没有被授权访问。请联系管理员把这个邮箱添加为成员。</p><button class="btn" id="gout">退出登录</button>');g('gout').onclick=()=>sb.auth.signOut();return}
- canWrite=m.role==='editor';g('ro').hidden=canWrite;g('out').hidden=false;g('gate').hidden=true;show(cur);load()}
+ canWrite=['admin','editor'].includes(m.role);g('ro').hidden=canWrite;g('out').hidden=false;g('gate').hidden=true;show(cur);load()}
 if(!window.supabase||SUPABASE_URL.startsWith('把你的')){gate('<p>还没有配置 Supabase：请在 index.html 顶部填入 SUPABASE_URL 和 SUPABASE_ANON_KEY。</p>')}
 else{sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);sb.auth.onAuthStateChange((ev,s)=>{setTimeout(()=>boot(s),0)})}
 })();
