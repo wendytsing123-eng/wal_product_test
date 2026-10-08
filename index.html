@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-CN"><head><meta charset="UTF-8"><script>try{var t=localStorage.getItem("theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.dataset.theme=t}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Walmart产品综合测算</title>
+<title>Walmart产品分析</title>
 <style>
 :root{--ink:#16213A;--soft:#667085;--bg:#EEF1F6;--panel:#fff;--line:#E3E8F0;--blue:#2F5BEA;--blue-s:#EEF3FF;--navy:#16213A;--amber:#B7791F;--green:#1E8E5A;--green-s:#E6F5EE;--red:#D14343;--red-s:#FCEBEA;--shadow:0 1px 2px rgba(22,33,58,.05),0 6px 20px rgba(22,33,58,.05);--mono:ui-monospace,'SF Mono',Consolas,Menlo,monospace;--sans:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei','Segoe UI',sans-serif}
 *{box-sizing:border-box}
@@ -145,7 +145,11 @@ body{padding-left:210px}
 #pdf{margin-left:0;margin-top:auto}#tt{margin-left:0;margin-top:0}}
 .wrap.emb{max-width:none}
 #ptitle{display:none}
-#pdf{margin-left:auto}#tt{margin-left:0}
+.tool iframe{height:calc(100vh - 140px)!important}
+.tmsg{font-size:13px;color:#0E8A5F;min-height:18px;margin:6px 2px}
+@media(max-width:860px){.tool iframe{height:calc(100vh - 210px)!important}}
+@media(max-width:860px){#pdf{margin-left:auto}}#tt{margin-left:0}
+#nav .gh{gap:6px;text-align:left}.grp .gh i{flex:none}
 .editbar{margin-top:8px;padding:8px 12px;border-radius:10px;background:#FFF6E0;color:#8A5A00;font-size:13px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .editbar .btn{padding:5px 12px;font-size:12px}
 :root[data-theme="dark"] .editbar{background:#3B3118;color:#F5C25B}
@@ -155,7 +159,7 @@ body.pp #ptitle{display:flex!important;align-items:center;gap:16px;padding:6px 0
 #ptimg{width:76px;height:76px;object-fit:cover;border-radius:10px;border:1px solid #ddd;flex:none}
 #ptname{margin:0;font-size:26px;line-height:1.3;color:#111}
 @page{margin:12mm}
-#nav,#savebar,#gate,#editBar,#ro,.act,.btn,#toast,#q,.bar{display:none!important}
+#nav,#savebar,#gate,#editBar,.editbar,.tmsg,#ro,.act,.btn,#toast,#q,.bar{display:none!important}
 body{padding-left:0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .sv,.panel,.card{break-inside:avoid}
 .emb iframe{height:auto}}
@@ -376,14 +380,21 @@ const SUPABASE_URL='https://ejvgerfwwlitxboiqqkw.supabase.co';
 const SUPABASE_ANON_KEY='sb_publishable_5H4_a4xe0Mfys7AaTjs0cw_OnRyFVni';
 // ====== 新增 html 板块：每多一个文件，就在下面加一行（id 不能重复）======
 const EXTRA_PAGES=[
-// {id:'assess',title:'Overall Assessment',file:'Overall Assessment.html'},
- // {id:'demo',title:'新板块名字',file:'文件名.html'},
+ {id:'tail',title:'尾程派送费计算器',file:'尾程派送费计算器.html',save:true},
+ {id:'ads',title:'广告花费计算器',file:'广告花费计算器.html',save:true},
+ {id:'cat',title:'类目单品目标测算',file:'类目单品目标测算.html',save:true},
+ {id:'wm',title:'沃尔玛广告动态测算表',file:'沃尔玛广告动态测算表.html',save:true},
+ // 新增页面：{id:'英文代号',title:'侧边栏名字',file:'文件名.html',save:true},   save:true = 带保存记录和导出
 ];
 // =================================================================
 (function(){
 const g=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-EXTRA_PAGES.forEach(p=>{const d=document.createElement('div');d.className='wrap emb';d.dataset.page=p.id;d.dataset.title=p.title;d.hidden=true;const f=document.createElement('iframe');f.dataset.src=encodeURI(p.file);d.appendChild(f);document.body.appendChild(d)});
+const mkPage=(page,title,cls,html)=>{const d=document.createElement('div');d.className=cls;d.dataset.page=page;d.dataset.title=title;d.hidden=true;d.innerHTML=html;document.body.appendChild(d)};
+EXTRA_PAGES.forEach(p=>{const src=encodeURI(p.file);
+ if(!p.save){mkPage(p.id,p.title,'wrap emb','<iframe data-src="'+src+'"></iframe>');return}
+ mkPage('t_'+p.id,'计算器','wrap emb tool','<div class="bar tbar" hidden><div><label>记录名称</label><input class="tn" placeholder="例如：瑜伽垫 方案A"></div><button class="btn ov" hidden>覆盖原记录</button><button class="btn sv_">保存记录</button></div><div class="editbar" hidden><span class="et"></span><button class="btn ghost ce" type="button">退出编辑</button></div><div class="tmsg"></div><iframe data-src="'+src+'"></iframe>');
+ mkPage('r_'+p.id,'已保存记录','wrap','<div class="bar"><div><label>搜索记录</label><input class="rq" placeholder="输入名称或保存人邮箱筛选"></div></div><div class="note rro" hidden>当前为只读查看权限：可浏览已保存的记录，不能保存或删除。</div><div class="rlist" style="margin-top:14px"><div class="empty">加载中…</div></div>')});
 const pages=[...new Set([...document.querySelectorAll('[data-page]')].map(e=>e.dataset.page))],titles={};
 document.querySelectorAll('[data-title]').forEach(e=>titles[e.dataset.page]=e.dataset.title);
 let cur=pages[0],canWrite=false,all=[],email='',sb=null;
@@ -392,14 +403,15 @@ function show(p){if(!pages.includes(p))p=pages[0];cur=p;
  document.querySelectorAll('[data-page="'+p+'"] iframe[data-src]').forEach(f=>{f.src=f.dataset.src;f.removeAttribute('data-src')});
  document.querySelectorAll('[data-page]').forEach(e=>{e.hidden=e.dataset.page!==p||(e.id==='savebar'&&!canWrite)});
  document.querySelectorAll('#nav button[data-p]').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
- if(hd)hd.hidden=!inG(p);
+ if(hd)hd.hidden=!MAIN.includes(p);
+ const gk=inG(p);document.querySelectorAll('#nav .grp').forEach(el=>{if(el.firstChild.dataset.g===gk)el.classList.remove('closed')});
  document.querySelectorAll('#nav .gh').forEach(b=>b.classList.toggle('act',inG(p)===b.dataset.g))}
-const GROUPS={'综合测算表':['calc','saved']},inG=p=>Object.keys(GROUPS).find(k=>GROUPS[k].includes(p)),hd=document.querySelector('header.top');
+const GROUPS={'综合测算表':['calc','saved']},MAIN=['calc','saved'];EXTRA_PAGES.filter(p=>p.save).forEach(p=>{GROUPS[p.title]=['t_'+p.id,'r_'+p.id]});const inG=p=>Object.keys(GROUPS).find(k=>GROUPS[k].includes(p)),hd=document.querySelector('header.top');
 const done={};let navH='';
 pages.forEach(p=>{const k=inG(p);
  if(!k){navH+=`<button data-p="${esc(p)}">${esc(titles[p]||p)}</button>`;return}
  if(done[k])return;done[k]=1;
- navH+=`<div class="grp"><button class="gh" data-g="${esc(k)}">${esc(k)}<i>▾</i></button><div class="gc">`+GROUPS[k].filter(x=>pages.includes(x)).map(x=>`<button class="sub" data-p="${esc(x)}">${esc(titles[x]||x)}</button>`).join('')+'</div></div>'});
+ navH+=`<div class="grp${k==='综合测算表'?'':' closed'}"><button class="gh" data-g="${esc(k)}">${esc(k)}<i>▾</i></button><div class="gc">`+GROUPS[k].filter(x=>pages.includes(x)).map(x=>`<button class="sub" data-p="${esc(x)}">${esc(titles[x]||x)}</button>`).join('')+'</div></div>'});
 g('nav').innerHTML=navH+'<button id="pdf">📄 导出 PDF</button><button id="tt"></button><button id="out" hidden>退出登录</button>';
 lab();show(cur);
 g('nav').onclick=e=>{const b=e.target.closest('button');if(!b)return;
@@ -407,7 +419,7 @@ g('nav').onclick=e=>{const b=e.target.closest('button');if(!b)return;
  else if(b.id==='pdf'){exportPdf()}
  else if(b.id==='out'){sb.auth.signOut()}
  else if(b.dataset.g!==undefined){b.parentElement.classList.toggle('closed')}
- else{show(b.dataset.p);if(b.dataset.p==='saved')load()}};
+ else{const pp=b.dataset.p;show(pp);if(pp==='saved')load();if(pp.indexOf('r_')===0&&TS[pp.slice(2)])TS[pp.slice(2)].load()}};
 const ok=u=>/^https?:\/\/\S+$/i.test(u||'');
 function pv(){const u=g('pimg').value.trim(),im=g('pprev'),ti=g('ptimg');if(ok(u)){im.src=u;im.hidden=false;ti.src=u;ti.hidden=false}else{im.hidden=true;im.removeAttribute('src');ti.hidden=true;ti.removeAttribute('src')}}
 let pt=null,ot='';
@@ -416,7 +428,9 @@ addEventListener('beforeprint',()=>{pt=R.dataset.theme;R.dataset.theme='light';
  if(cur==='calc'&&nm){g('ptname').textContent=nm;document.body.classList.add('pp');document.title=nm}});
 addEventListener('afterprint',()=>{if(pt){R.dataset.theme=pt;pt=null;lab()}document.body.classList.remove('pp');if(ot){document.title=ot;ot=''}});
 function exportPdf(){const f=document.querySelector('[data-page="'+cur+'"] iframe');
- if(f&&!f.hasAttribute('data-src')){try{f.contentWindow.focus();f.contentWindow.print();return}catch(_){}}
+ if(f&&!f.hasAttribute('data-src')){try{const w=f.contentWindow,d=f.contentDocument,tn=document.querySelector('[data-page="'+cur+'"] .tn'),nm=tn?tn.value.trim():'',ot2=d.title;let el=null;
+  if(nm){el=d.createElement('div');el.style.cssText='font:700 22px/1.4 sans-serif;margin:0 0 14px;color:#111';el.textContent=nm;d.body.insertBefore(el,d.body.firstChild);d.title=nm}
+  w.addEventListener('afterprint',()=>{if(el)el.remove();d.title=ot2},{once:true});w.focus();w.print();return}catch(_){}}
  window.print()}
 const toast=t=>{g('toast').textContent=t;setTimeout(()=>{if(g('toast').textContent===t)g('toast').textContent=''},4000)};
 const collect=()=>{const vals={};document.querySelectorAll('input[id],select[id]').forEach(e=>{if(['pname','q','gemail','gpw','pimg'].includes(e.id))return;vals[e.id]=e.type==='checkbox'?e.checked:e.value});
@@ -466,6 +480,64 @@ g('ovBtn').onclick=()=>run(async()=>{if(!editId)return;const p=payload();if(!p)r
  const{data,error}=await sb.from('products').update(p).eq('id',editId).select('id');
  if(error||!data||!data.length){toast('覆盖失败：'+(error?error.message:'没有修改权限，请先在 Supabase 运行 update_policy.sql'));return}
  toast('已覆盖「'+p.name+'」');g('editTxt').textContent=etxt(p.name);load()});
+// ===== 工具页：保存记录 / 编辑 / 覆盖 =====
+const T=(d,id)=>{const e=d.getElementById(id);return e?e.textContent.replace(/\s+/g,' ').trim():''};
+const HOOK={
+ tail:{after:w=>w.calcFee(),sum:d=>[['尾程派送费',T(d,'totalFee')],['判定',T(d,'flags')]]},
+ ads:{after:w=>{w.calcRoas();w.calcForecast()},sum:d=>{const v=[...d.querySelectorAll('#summaryCards .value')].map(x=>x.textContent.trim());return[['所需 ROAS',T(d,'roasResult').replace(/^[^:：]*[:：]\s*/,'')],['3个月总广告花费',v[0]||'-'],['综合 ROAS',v[1]||'-'],['综合 TACOS',v[2]||'-']]}},
+ cat:{sum:d=>[['TOP1–5 日销合计',T(d,'top5DailySum')],['类目总日销',T(d,'categoryDailyTotal')]],
+  getEx:d=>{const a=d.querySelector('#concentrationPreset .radio-opt.active');return a?a.dataset.val:null},
+  setEx:(d,x)=>{if(x&&x!=='custom'){const o=d.querySelector('#concentrationPreset [data-val="'+x+'"]');if(o)o.click()}}},
+ wm:{sum:d=>[['盈亏平衡 ACOS',T(d,'beAcos')],['盈亏平衡 ROAS',T(d,'beRoas')],['最高可承受 CPC',T(d,'maxCpc')]],
+  getEx:d=>{const a=d.querySelector('#competition button.active');return a?a.dataset.val:null},
+  setEx:(d,x)=>{const b=x&&d.querySelector('#competition button[data-val="'+x+'"]');if(b)b.click()}}
+};
+const fkey=e=>e.id||(e.className&&e.dataset&&e.dataset.idx!==undefined?e.className+'#'+e.dataset.idx:null);
+const fields=d=>[...d.querySelectorAll('input,select,textarea')].filter(e=>!['radio','button','submit','file'].includes(e.type)&&fkey(e));
+const readDoc=d=>{const v={};fields(d).forEach(e=>{v[fkey(e)]=e.type==='checkbox'?e.checked:e.value});return v};
+function writeDoc(d,v){const W=d.defaultView;fields(d).forEach(e=>{const k=fkey(e);if(!(k in v))return;if(e.type==='checkbox')e.checked=!!v[k];else e.value=v[k];['input','change'].forEach(t=>e.dispatchEvent(new W.Event(t,{bubbles:true})))})}
+const TS={};
+function initTool(p){
+ const id=p.id,hk=HOOK[id]||{},pg=document.querySelector('[data-page="t_'+id+'"]'),rp=document.querySelector('[data-page="r_'+id+'"]');
+ const f=pg.querySelector('iframe'),q=s=>pg.querySelector(s),rq=s=>rp.querySelector(s);
+ const st=TS[id]={id,f,hk,ok:false,w:[],edit:null,all:[]};
+ f.addEventListener('load',()=>{st.ok=true;st.w.splice(0).forEach(r=>r())});
+ const wait=()=>new Promise(r=>st.ok?r():st.w.push(r));
+ const msg=t=>{const m=q('.tmsg');m.textContent=t;setTimeout(()=>{if(m.textContent===t)m.textContent=''},4000)};
+ const etxt=n=>'正在编辑「'+n+'」：改完后可「覆盖原记录」，或「另存为新记录」（新名称不能与已有记录重复）';
+ const setEdit=r=>{st.edit=r?r.id:null;q('.ov').hidden=!r;q('.editbar').hidden=!r;q('.sv_').textContent=r?'另存为新记录':'保存记录';if(r)q('.et').textContent=etxt(r.name)};
+ const snap=()=>{const d=f.contentDocument,w=f.contentWindow;if(hk.after)hk.after(w);const vals=readDoc(d);if(hk.getEx)vals._ex=hk.getEx(d);return{vals,sum:hk.sum?hk.sum(d):[]}};
+ const dupe=async(name,ex)=>{const{data,error}=await sb.from('page_records').select('id,name').eq('page',id);if(error)return null;const n=name.toLowerCase();return data.some(r=>r.id!==ex&&String(r.name).trim().toLowerCase()===n)};
+ const payload=async()=>{const name=q('.tn').value.trim();if(!name){msg('请先填写记录名称');return null}await wait();return{name,...snap()}};
+ const busy=b=>{q('.sv_').disabled=q('.ov').disabled=b};
+ q('.ce').onclick=()=>setEdit(null);
+ q('.sv_').onclick=async()=>{busy(true);try{const pl=await payload();if(!pl)return;const d=await dupe(pl.name,null);
+  if(d===null){msg('无法检查名称是否重复，请稍后再试');return}
+  if(d){msg('记录名称「'+pl.name+'」已存在，请换一个名称');return}
+  const{error}=await sb.from('page_records').insert({page:id,...pl,by_email:email});
+  if(error){msg('保存失败：'+error.message);return}
+  msg('已保存「'+pl.name+'」，可在“已保存记录”里查看');setEdit(null);st.load()}finally{busy(false)}};
+ q('.ov').onclick=async()=>{if(!st.edit)return;busy(true);try{const pl=await payload();if(!pl)return;const d=await dupe(pl.name,st.edit);
+  if(d===null){msg('无法检查名称是否重复，请稍后再试');return}
+  if(d){msg('记录名称「'+pl.name+'」已被其他记录使用，请换一个名称');return}
+  const{data,error}=await sb.from('page_records').update(pl).eq('id',st.edit).select('id');
+  if(error||!data||!data.length){msg('覆盖失败：'+(error?error.message:'没有修改权限，请先在 Supabase 运行 page_records.sql'));return}
+  msg('已覆盖「'+pl.name+'」');q('.et').textContent=etxt(pl.name);st.load()}finally{busy(false)}};
+ const render=()=>{const k=rq('.rq').value.trim().toLowerCase();
+  const rows=st.all.filter(r=>!k||String(r.name).toLowerCase().includes(k)||String(r.by_email||'').toLowerCase().includes(k));
+  rq('.rlist').innerHTML=rows.length?rows.map(r=>`<div class="sv"><div class="row"><div class="bd"><h3>${esc(r.name)}</h3><div class="meta">${new Date(r.created_at).toLocaleString('zh-CN',{hour12:false})}${r.by_email?' · '+esc(r.by_email):''}</div><div class="m">${(r.sum||[]).map(s=>`<div><div class="k">${esc(s[0])}</div><div class="v">${esc(s[1])}</div></div>`).join('')}</div></div></div><div class="act"><button class="btn ghost" data-a="load" data-i="${esc(r.id)}">${canWrite?'编辑':'载入查看'}</button>${canWrite?`<button class="btn del" data-a="del" data-i="${esc(r.id)}">删除</button>`:''}</div></div>`).join(''):'<div class="empty">'+(st.all.length?'没有匹配的记录':'还没有保存的记录。在“计算器”页填好后点“保存记录”。')+'</div>'};
+ st.load=async()=>{if(!sb||g('gate').hidden===false)return;
+  const{data,error}=await sb.from('page_records').select('*').eq('page',id).order('created_at',{ascending:false});
+  if(error){rq('.rlist').innerHTML='<div class="empty">读取失败：'+esc(error.message)+'</div>';return}
+  st.all=data;render()};
+ rq('.rq').oninput=render;
+ rq('.rlist').onclick=async e=>{const b=e.target.closest('button');if(!b)return;const r=st.all.find(x=>x.id===b.dataset.i);if(!r)return;
+  if(b.dataset.a==='load'){show('t_'+id);window.scrollTo(0,0);await wait();
+   const d=f.contentDocument,w=f.contentWindow,v=Object.assign({},r.vals),ex=v._ex;delete v._ex;
+   writeDoc(d,v);if(hk.setEx)hk.setEx(d,ex);if(hk.after)hk.after(w);q('.tn').value=r.name;setEdit(canWrite?r:null)}
+  else if(b.dataset.a==='del'){if(b.dataset.s!=='1'){b.dataset.s='1';b.textContent='再点一次确认删除';return}
+   const{error}=await sb.from('page_records').delete().eq('id',r.id);if(error)b.textContent='删除失败';else st.load()}}}
+EXTRA_PAGES.filter(p=>p.save).forEach(initTool);
 async function boot(s){
  if(!s){g('out').hidden=true;canWrite=false;
   gate('<p>请输入邮箱和密码登录。账号由管理员在后台创建。</p><input id="gemail" type="email" placeholder="you@example.com"><input id="gpw" type="password" placeholder="密码"><button class="btn" id="gsend">登录</button>');
@@ -477,7 +549,7 @@ async function boot(s){
  email=(s.user.email||'').toLowerCase();
  const{data:m,error}=await sb.from('members').select('role').eq('email',email).maybeSingle();
  if(error||!m){gate('<p>'+esc(email)+' 还没有被授权访问。请联系管理员把这个邮箱添加为成员。</p><button class="btn" id="gout">退出登录</button>');g('gout').onclick=()=>sb.auth.signOut();return}
- canWrite=['admin','editor'].includes(m.role);g('ro').hidden=canWrite;g('out').hidden=false;g('gate').hidden=true;show(cur);load()}
+ canWrite=['admin','editor'].includes(m.role);g('ro').hidden=canWrite;document.querySelectorAll('.tbar').forEach(e=>e.hidden=!canWrite);document.querySelectorAll('.rro').forEach(e=>e.hidden=canWrite);g('out').hidden=false;g('gate').hidden=true;show(cur);load()}
 if(!window.supabase||SUPABASE_URL.startsWith('把你的')){gate('<p>还没有配置 Supabase：请在 index.html 顶部填入 SUPABASE_URL 和 SUPABASE_ANON_KEY。</p>')}
 else{sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);sb.auth.onAuthStateChange((ev,s)=>{setTimeout(()=>boot(s),0)})}
 })();
