@@ -211,7 +211,7 @@ body{padding-left:0!important;-webkit-print-color-adjust:exact;print-color-adjus
 </div>
 <div class="note">3P 对标默认 30/60/90/90%(起步 → 爬坡 → 逼近 → 稳定);选自营对标时,Q1–Q4 百分比请改成 15/25/35/35 左右。</div></div>
 
-<h2>3 广告参数(按季度)</h2>
+<h2>3 广告与售价参数(按季度)</h2>
 <div class="panel"><div class="g">
 <div><label>Q1 目标 TACOS %</label><input id="T1" type="number" value="25"></div>
 <div><label>Q2 目标 TACOS %</label><input id="T2" type="number" value="18"></div>
@@ -221,7 +221,11 @@ body{padding-left:0!important;-webkit-print-color-adjust:exact;print-color-adjus
 <div><label>Q2 归因占比 %</label><input id="A2" type="number" value="55"></div>
 <div><label>Q3 归因占比 %</label><input id="A3" type="number" value="50"></div>
 <div><label>Q4 归因占比 %</label><input id="A4" type="number" value="50"></div>
-</div></div>
+<div><label>Q1 售价 $</label><input id="PR1" type="number" step="0.01"></div>
+<div><label>Q2 售价 $</label><input id="PR2" type="number" step="0.01"></div>
+<div><label>Q3 售价 $</label><input id="PR3" type="number" step="0.01"></div>
+<div><label>Q4 售价 $</label><input id="PR4" type="number" step="0.01"></div>
+</div><div class="note">季度售价留空 = 沿用基础售价(竞品价 × 定价调整);填写后,该季度的 GMV、佣金、退货、其他成本和低价费都会按这个售价重新计算。</div></div>
 
 <h2>结果</h2>
 <div class="hero" id="hero"></div>
@@ -230,7 +234,7 @@ body{padding-left:0!important;-webkit-print-color-adjust:exact;print-color-adjus
 <div class="panel"><table><thead><tr><th>项目</th><th>说明</th><th>金额 $</th></tr></thead><tbody id="unit"></tbody></table><div class="note" id="unitNote"></div></div>
 
 <h2>类目日销与首年分季度计划</h2>
-<div class="panel"><table><thead><tr><th>季度</th><th>日销(单)</th><th>季销量</th><th>GMV</th><th>TACOS</th><th>所需ROAS</th><th>广告预算</th><th>日均广告</th><th>净利润</th><th>净利率</th></tr></thead><tbody id="qt"></tbody></table><div class="note" id="catNote"></div></div>
+<div class="panel"><table><thead><tr><th>季度</th><th>售价</th><th>日销(单)</th><th>季销量</th><th>GMV</th><th>TACOS</th><th>所需ROAS</th><th>广告预算</th><th>日均广告</th><th>净利润</th><th>净利率</th></tr></thead><tbody id="qt"></tbody></table><div class="note" id="catNote"></div></div>
 
 <h2>首批备货(3个月)</h2>
 <div class="panel"><table><tbody id="stock"></tbody></table></div>
@@ -290,13 +294,14 @@ function calc(){
  const warn=bd?'':'  ⚠ TOP1–5 中没有该类型卖家,请调整标记或对标基准。';
  $('catNote').innerHTML=`类目总日销约 <b>${I(cat)}</b> 单/天(TOP1–5 合计 ${I(sum)} 单/天 ÷ ${n('CONC')}%);对标基准 ${bs=='3p'?'3P':'自营'} TOP1 = ${bd.toFixed(1)} 单/天。`+warn;
  // quarters
+ const unitAt=pr=>pr-pr*n('COM')/100-(f.base+f.o+f.app+f.haz+(pr<10?1:0))-cost-frt-pr*n('RET')/100-pr*n('OTH')/100;
  let tu=0,tg=0,ta2=0,tp=0;const days=91,rows=[];
  for(let q=1;q<=4;q++){
-  const dy=bd*n('P'+q)/100,u=dy*days,g=u*price,tc=n('T'+q),at=n('A'+q),ad=g*tc/100,roas=tc?at/tc:0;
-  const np=u*pre-ad;tu+=u;tg+=g;ta2+=ad;tp+=np;rows.push({q,dy,u,g,tc,roas,ad,np});
+  $('PR'+q).placeholder='沿用 '+$$(price);const pq=n('PR'+q)||price,dy=bd*n('P'+q)/100,u=dy*days,g=u*pq,tc=n('T'+q),at=n('A'+q),ad=g*tc/100,roas=tc?at/tc:0;
+  const np=u*unitAt(pq)-ad;tu+=u;tg+=g;ta2+=ad;tp+=np;rows.push({q,pq,dy,u,g,tc,roas,ad,np});
  }
- $('qt').innerHTML=rows.map(r=>`<tr><td>Q${r.q}</td><td>${r.dy.toFixed(1)}</td><td>${I(r.u)}</td><td>${$0(r.g)}</td><td>${r.tc}%</td><td>${r.roas.toFixed(2)}</td><td>${$0(r.ad)}</td><td>${$0(r.ad/days)}</td><td class="${r.np>=0?'pos':'neg'}">${$0(r.np)}</td><td class="${r.np>=0?'pos':'neg'}">${r.g?(r.np/r.g*100).toFixed(1):0}%</td></tr>`).join('')
- +`<tr class="s"><td>首年合计</td><td></td><td>${I(tu)}</td><td>${$0(tg)}</td><td>${tg?(ta2/tg*100).toFixed(1):0}%</td><td></td><td>${$0(ta2)}</td><td>${$0(ta2/365)}</td><td class="${tp>=0?'pos':'neg'}">${$0(tp)}</td><td>${tg?(tp/tg*100).toFixed(1):0}%</td></tr>`;
+ $('qt').innerHTML=rows.map(r=>`<tr><td>Q${r.q}</td><td>${$$(r.pq)}</td><td>${r.dy.toFixed(1)}</td><td>${I(r.u)}</td><td>${$0(r.g)}</td><td>${r.tc}%</td><td>${r.roas.toFixed(2)}</td><td>${$0(r.ad)}</td><td>${$0(r.ad/days)}</td><td class="${r.np>=0?'pos':'neg'}">${$0(r.np)}</td><td class="${r.np>=0?'pos':'neg'}">${r.g?(r.np/r.g*100).toFixed(1):0}%</td></tr>`).join('')
+ +`<tr class="s"><td>首年合计</td><td>${tu?$$(tg/tu):''}</td><td></td><td>${I(tu)}</td><td>${$0(tg)}</td><td>${tg?(ta2/tg*100).toFixed(1):0}%</td><td></td><td>${$0(ta2)}</td><td>${$0(ta2/365)}</td><td class="${tp>=0?'pos':'neg'}">${$0(tp)}</td><td>${tg?(tp/tg*100).toFixed(1):0}%</td></tr>`;
  // stock
  window.G={rows,cp,cost,frt};const r1=rows[0],need=r1.dy*90,qty=Math.ceil(need*(1+n('BUF')/100)),cash=qty*(cost+frt);
  $('stock').innerHTML=`<tr><td>Q1 目标日销</td><td>${r1.dy.toFixed(1)} 单/天</td></tr><tr><td>3 个月需求(×90 天)</td><td>${I(need)} 件</td></tr><tr><td>含安全冗余 ${n('BUF')}% 的首批数量</td><td><b>${I(qty)} 件</b></td></tr><tr><td>首批货款 + 头程</td><td>${$0(cash)}</td></tr><tr><td>Q1 广告预算(与首批同期)</td><td>${$0(r1.ad)}</td></tr><tr><td>首批合计现金占用</td><td><b>${$0(cash+r1.ad)}</b></td></tr>`;
@@ -371,7 +376,7 @@ const SUPABASE_URL='https://ejvgerfwwlitxboiqqkw.supabase.co';
 const SUPABASE_ANON_KEY='sb_publishable_5H4_a4xe0Mfys7AaTjs0cw_OnRyFVni';
 // ====== 新增 html 板块：每多一个文件，就在下面加一行（id 不能重复）======
 const EXTRA_PAGES=[
- // {id:'assess',title:'Overall Assessment',file:'Overall Assessment.html'},
+// {id:'assess',title:'Overall Assessment',file:'Overall Assessment.html'},
  // {id:'demo',title:'新板块名字',file:'文件名.html'},
 ];
 // =================================================================
@@ -416,7 +421,7 @@ function exportPdf(){const f=document.querySelector('[data-page="'+cur+'"] ifram
 const toast=t=>{g('toast').textContent=t;setTimeout(()=>{if(g('toast').textContent===t)g('toast').textContent=''},4000)};
 const collect=()=>{const vals={};document.querySelectorAll('input[id],select[id]').forEach(e=>{if(['pname','q','gemail','gpw','pimg'].includes(e.id))return;vals[e.id]=e.type==='checkbox'?e.checked:e.value});
  return{vals,ts:[...document.querySelectorAll('.ts')].map(e=>e.value),ta:[...document.querySelectorAll('.ta')].map(e=>e.value)}};
-const apply=d=>{Object.entries(d.vals||{}).forEach(([id,v])=>{const e=g(id);if(!e)return;e.type==='checkbox'?e.checked=!!v:e.value=v});
+const apply=d=>{['PR1','PR2','PR3','PR4'].forEach(i=>{if(g(i))g(i).value=''});Object.entries(d.vals||{}).forEach(([id,v])=>{const e=g(id);if(!e)return;e.type==='checkbox'?e.checked=!!v:e.value=v});
  document.querySelectorAll('.ts').forEach((e,i)=>{if(d.ts&&d.ts[i]!=null)e.value=d.ts[i]});
  document.querySelectorAll('.ta').forEach((e,i)=>{if(d.ta&&d.ta[i]!=null)e.value=d.ta[i]});g('pimg').value=(d.vals&&d.vals._img)||'';pv();calc()};
 const gate=(html,msg)=>{g('gate').hidden=false;g('gbody').innerHTML=html;g('gmsg').textContent=msg||''};
