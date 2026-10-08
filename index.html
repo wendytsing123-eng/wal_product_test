@@ -262,7 +262,7 @@ body{padding-left:0!important;-webkit-print-color-adjust:exact;print-color-adjus
 
 <div class="note">口径:头程 = max(长×宽×高÷6000, 实重) × 单价 ÷ 汇率;尾程费沿用你的「尾程派送费计算器」;ROAS = 归因占比 ÷ TACOS;广告预算 = GMV × TACOS;类目总日销 = TOP1–5 日销合计 ÷ 集中度(月销按 30.4 天折日销)。净利润已扣广告,未含仓储费、平台月租和税费。</div>
 </div>
-<div class="wrap" data-page="saved" data-title="已保存产品" hidden>
+<div class="wrap" data-page="saved" data-title="已保存记录" hidden>
 <div class="bar"><div><label>搜索产品</label><input id="q" placeholder="输入产品名称或保存人邮箱筛选"></div></div>
 <div id="ro" class="note" hidden>当前为只读查看权限：可浏览已保存的产品，不能保存或删除。</div>
 <div id="list" style="margin-top:14px"><div class="empty">加载中…</div></div></div>
@@ -393,7 +393,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const mkPage=(page,title,cls,html)=>{const d=document.createElement('div');d.className=cls;d.dataset.page=page;d.dataset.title=title;d.hidden=true;d.innerHTML=html;document.body.appendChild(d)};
 EXTRA_PAGES.forEach(p=>{const src=encodeURI(p.file);
  if(!p.save){mkPage(p.id,p.title,'wrap emb','<iframe data-src="'+src+'"></iframe>');return}
- mkPage('t_'+p.id,'计算器','wrap emb tool','<div class="bar tbar" hidden><div><label>记录名称</label><input class="tn" placeholder="例如：瑜伽垫 方案A"></div><button class="btn ov" hidden>覆盖原记录</button><button class="btn sv_">保存记录</button></div><div class="editbar" hidden><span class="et"></span><button class="btn ghost ce" type="button">退出编辑</button></div><div class="tmsg"></div><iframe data-src="'+src+'"></iframe>');
+ mkPage('t_'+p.id,'测算表','wrap emb tool','<div class="bar tbar" hidden><div><label>记录名称</label><input class="tn" placeholder="例如：瑜伽垫 方案A"></div><button class="btn ov" hidden>覆盖原记录</button><button class="btn sv_">保存记录</button></div><div class="editbar" hidden><span class="et"></span><button class="btn ghost ce" type="button">退出编辑</button></div><div class="tmsg"></div><iframe data-src="'+src+'"></iframe>');
  mkPage('r_'+p.id,'已保存记录','wrap','<div class="bar"><div><label>搜索记录</label><input class="rq" placeholder="输入名称或保存人邮箱筛选"></div></div><div class="note rro" hidden>当前为只读查看权限：可浏览已保存的记录，不能保存或删除。</div><div class="rlist" style="margin-top:14px"><div class="empty">加载中…</div></div>')});
 const pages=[...new Set([...document.querySelectorAll('[data-page]')].map(e=>e.dataset.page))],titles={};
 document.querySelectorAll('[data-title]').forEach(e=>titles[e.dataset.page]=e.dataset.title);
@@ -472,7 +472,7 @@ g('saveBtn').onclick=()=>run(async()=>{const p=payload();if(!p)return;
  if(d){toast('产品名称「'+p.name+'」已存在，请换一个名称');return}
  const{error}=await sb.from('products').insert({...p,by_email:email});
  if(error){toast('保存失败：'+error.message);return}
- toast('已保存「'+p.name+'」，可在“已保存产品”页查看');setEdit(null);load()});
+ toast('已保存「'+p.name+'」，可在“已保存记录”页查看');setEdit(null);load()});
 g('ovBtn').onclick=()=>run(async()=>{if(!editId)return;const p=payload();if(!p)return;
  const d=await dupe(p.name,editId);
  if(d===null){toast('无法检查名称是否重复，请稍后再试');return}
@@ -525,7 +525,7 @@ function initTool(p){
   msg('已覆盖「'+pl.name+'」');q('.et').textContent=etxt(pl.name);st.load()}finally{busy(false)}};
  const render=()=>{const k=rq('.rq').value.trim().toLowerCase();
   const rows=st.all.filter(r=>!k||String(r.name).toLowerCase().includes(k)||String(r.by_email||'').toLowerCase().includes(k));
-  rq('.rlist').innerHTML=rows.length?rows.map(r=>`<div class="sv"><div class="row"><div class="bd"><h3>${esc(r.name)}</h3><div class="meta">${new Date(r.created_at).toLocaleString('zh-CN',{hour12:false})}${r.by_email?' · '+esc(r.by_email):''}</div><div class="m">${(r.sum||[]).map(s=>`<div><div class="k">${esc(s[0])}</div><div class="v">${esc(s[1])}</div></div>`).join('')}</div></div></div><div class="act"><button class="btn ghost" data-a="load" data-i="${esc(r.id)}">${canWrite?'编辑':'载入查看'}</button>${canWrite?`<button class="btn del" data-a="del" data-i="${esc(r.id)}">删除</button>`:''}</div></div>`).join(''):'<div class="empty">'+(st.all.length?'没有匹配的记录':'还没有保存的记录。在“计算器”页填好后点“保存记录”。')+'</div>'};
+  rq('.rlist').innerHTML=rows.length?rows.map(r=>`<div class="sv"><div class="row"><div class="bd"><h3>${esc(r.name)}</h3><div class="meta">${new Date(r.created_at).toLocaleString('zh-CN',{hour12:false})}${r.by_email?' · '+esc(r.by_email):''}</div><div class="m">${(r.sum||[]).map(s=>`<div><div class="k">${esc(s[0])}</div><div class="v">${esc(s[1])}</div></div>`).join('')}</div></div></div><div class="act"><button class="btn ghost" data-a="load" data-i="${esc(r.id)}">${canWrite?'编辑':'载入查看'}</button>${canWrite?`<button class="btn del" data-a="del" data-i="${esc(r.id)}">删除</button>`:''}</div></div>`).join(''):'<div class="empty">'+(st.all.length?'没有匹配的记录':'还没有保存的记录。在“测算表”页填好后点“保存记录”。')+'</div>'};
  st.load=async()=>{if(!sb||g('gate').hidden===false)return;
   const{data,error}=await sb.from('page_records').select('*').eq('page',id).order('created_at',{ascending:false});
   if(error){rq('.rlist').innerHTML='<div class="empty">读取失败：'+esc(error.message)+'</div>';return}
