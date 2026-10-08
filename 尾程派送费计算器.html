@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>尾程派送费计算器</title>
+<style>
+  :root{
+    --ink:#14213D;
+    --ink-soft:#5B6472;
+    --bg:#F6F5F1;
+    --panel:#FFFFFF;
+    --line:#E4E1D9;
+    --blue:#1553C7;
+    --blue-soft:#EAF0FC;
+    --amber:#C97A1A;
+    --amber-soft:#FBF0DF;
+    --green:#2F8F5B;
+    --green-soft:#E9F5EE;
+    --red:#C6432B;
+    --red-soft:#FBEAE5;
+    --mono:'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    padding:32px 16px 80px;
+    background:var(--bg);
+    font-family:var(--sans);
+    color:var(--ink);
+  }
+  .wrap{max-width:920px;margin:0 auto;}
+  .masthead{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:14px;
+    margin-bottom:24px;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .masthead h1{font-size:22px;margin:0;letter-spacing:0.2px;}
+  .masthead .tag{font-size:13px;color:var(--ink-soft);}
+  section{margin-bottom:26px;}
+  .section-label{font-size:13px;color:var(--ink-soft);margin:0 0 10px 2px;}
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px;
+  }
+  .rules{
+    font-size:13px;
+    color:var(--ink-soft);
+    line-height:1.9;
+    margin-bottom:16px;
+  }
+  .rules b{color:var(--ink);}
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+  }
+  @media (max-width:720px){.grid{grid-template-columns:1fr 1fr;}}
+  @media (max-width:420px){.grid{grid-template-columns:1fr;}}
+  label{display:block;font-size:13px;color:var(--ink-soft);margin-bottom:6px;}
+  input[type=number]{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:15px;
+    font-family:var(--mono);
+    background:#fff;
+    color:var(--ink);
+  }
+  input[type=number]:focus{outline:none;border-color:var(--blue);}
+  .checks{
+    display:flex;
+    gap:22px;
+    margin-top:18px;
+    flex-wrap:wrap;
+  }
+  .checks label{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:14px;
+    color:var(--ink);
+    margin:0;
+    cursor:pointer;
+  }
+  .checks input[type=checkbox]{width:16px;height:16px;accent-color:var(--blue);}
+  .btn-calc{
+    width:100%;
+    margin-top:20px;
+    padding:14px;
+    border-radius:8px;
+    background:var(--ink);
+    color:#fff;
+    font-size:15px;
+    border:none;
+    cursor:pointer;
+    letter-spacing:0.3px;
+  }
+  .btn-calc:hover{background:#233258;}
+
+  /* results */
+  .result-hero{
+    background:var(--blue-soft);
+    border:1px solid #C3D6F5;
+    border-radius:10px;
+    padding:22px;
+    text-align:center;
+    margin-bottom:16px;
+  }
+  .result-hero .big{
+    font-size:34px;
+    font-weight:700;
+    color:var(--blue);
+    font-family:var(--mono);
+  }
+  .result-hero .cap{font-size:13px;color:var(--ink-soft);margin-top:4px;}
+
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--line);}
+  th:first-child,td:first-child{text-align:left;}
+  th{font-weight:600;color:var(--ink-soft);font-size:12px;}
+  td{font-family:var(--mono);}
+  tr.sum-row td{font-weight:700;background:#F1EFE8;border-top:2px solid var(--ink);border-bottom:none;}
+  td.add{color:var(--amber);}
+  td.neg{color:var(--ink-soft);}
+
+  .flags{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+  .flag{
+    font-size:12px;
+    padding:5px 10px;
+    border-radius:20px;
+    font-weight:600;
+  }
+  .flag-ok{background:var(--green-soft);color:var(--green);}
+  .flag-warn{background:var(--amber-soft);color:var(--amber);}
+  .flag-bad{background:var(--red-soft);color:var(--red);}
+
+  .note{
+    margin-top:16px;
+    font-size:12px;
+    color:var(--ink-soft);
+    line-height:1.8;
+    font-family:var(--mono);
+  }
+  .hidden{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>尾程派送费计算器</h1>
+    <div class="tag">标准尺寸 Standard-size Fulfillment Fee</div>
+  </div>
+
+  <section>
+    <p class="section-label">标准尺寸判定规则</p>
+    <div class="panel">
+      <div class="rules">
+        符合以下条件即为<b>标准尺寸</b>商品：单位重量 ≤ <b>150 lb</b>；最长边 ≤ <b>108 in</b>；最长边 + 围长 ≤ <b>165 in</b>（围长 = 2 ×（宽 + 高））。<br>
+        单位重量在 1–150 lb 之间时，取<b>单位重量</b>与<b>体积重量</b>（长×宽×高 ÷ 139）中较大者计费；不足 1 lb 按实际重量计费。<br>
+        加 <b>0.25 lb</b> 包材重量后向上取整，得到最终计费重量。
+      </div>
+
+      <div class="grid">
+        <div>
+          <label for="len">长 Length (cm)</label>
+          <input type="number" id="len" value="46" step="0.5">
+        </div>
+        <div>
+          <label for="wid">宽 Width (cm)</label>
+          <input type="number" id="wid" value="30" step="0.5">
+        </div>
+        <div>
+          <label for="hei">高 Height (cm)</label>
+          <input type="number" id="hei" value="15" step="0.5">
+        </div>
+        <div>
+          <label for="weight">单位重量 Unit weight (kg)</label>
+          <input type="number" id="weight" value="3.6" step="0.05">
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:14px;">
+        <div>
+          <label for="price">零售价 Retail price ($)</label>
+          <input type="number" id="price" value="18" step="0.01">
+        </div>
+      </div>
+
+      <div class="checks">
+        <label><input type="checkbox" id="isApparel"> 服装类 Apparel（+$0.50）</label>
+        <label><input type="checkbox" id="isHazmat"> 危险品/化学品/电池 Hazmat（+$0.50）</label>
+      </div>
+
+      <button class="btn-calc" onclick="calcFee()">计算尾程派送费</button>
+    </div>
+  </section>
+
+  <section id="resultSection" class="hidden">
+    <p class="section-label">计算结果</p>
+    <div class="result-hero">
+      <div class="big" id="totalFee">$0.00</div>
+      <div class="cap" id="feeCap">预估尾程派送费总额</div>
+      <div class="flags" id="flags"></div>
+    </div>
+
+    <div class="panel">
+      <table>
+        <thead>
+          <tr><th>费用项</th><th>说明</th><th>金额</th></tr>
+        </thead>
+        <tbody id="feeBody"></tbody>
+        <tfoot>
+          <tr class="sum-row" id="sumRow"></tr>
+        </tfoot>
+      </table>
+      <div class="note" id="calcNote"></div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+function tierBaseFee(w){
+  // w = final rounded shipping weight in whole lb
+  if(w <= 1) return 3.45;
+  if(w === 2) return 4.95;
+  if(w === 3) return 5.45;
+  if(w >= 4 && w <= 20) return 5.75 + 0.40*(w-4);
+  if(w >= 21 && w <= 30) return 15.55 + 0.40*(w-21);
+  if(w >= 31 && w <= 50) return 14.55 + 0.40*(w-31);
+  return 17.55 + 0.40*(w-51); // >=51
+}
+
+function money(n){
+  return '$' + n.toFixed(2);
+}
+
+const CM_TO_IN = 1/2.54;
+const KG_TO_LB = 2.2046226218;
+
+function calcFee(){
+  const Lcm = parseFloat(document.getElementById('len').value) || 0;
+  const Wcm = parseFloat(document.getElementById('wid').value) || 0;
+  const Hcm = parseFloat(document.getElementById('hei').value) || 0;
+  const weightKg = parseFloat(document.getElementById('weight').value) || 0;
+  const price = parseFloat(document.getElementById('price').value) || 0;
+
+  // convert to the inches / lb that Amazon's fee formula is defined in
+  const L = Lcm * CM_TO_IN;
+  const W = Wcm * CM_TO_IN;
+  const H = Hcm * CM_TO_IN;
+  const unitWeight = weightKg * KG_TO_LB;
+  const isApparel = document.getElementById('isApparel').checked;
+  const isHazmat = document.getElementById('isHazmat').checked;
+
+  const dims = [L,W,H].sort((a,b)=>b-a);
+  const longest = dims[0], median = dims[1], shortest = dims[2];
+  const girth = 2*(median+shortest);
+  const longestPlusGirth = longest + girth;
+
+  // standard-size eligibility
+  const isStandard = unitWeight<=150 && longest<=108 && longestPlusGirth<=165;
+
+  // oversize tier
+  let oversizeTier = 0; // 0 none, 1 = +$3, 2 = +$20
+  const tier1 = (longest>48 && longest<=96) || (median>30) || (longestPlusGirth>105 && longestPlusGirth<=130);
+  const tier2 = (longest>96 && longest<=108) || (longestPlusGirth>130 && longestPlusGirth<=165);
+  if(tier2) oversizeTier = 2;
+  else if(tier1) oversizeTier = 1;
+
+  // dimensional weight
+  const dimWeight = (L*W*H)/139;
+  let billableWeight;
+  if(unitWeight < 1){
+    billableWeight = unitWeight;
+  } else {
+    billableWeight = Math.max(unitWeight, dimWeight);
+  }
+  // oversize tier2: unit weight floor starts at 90lb when determining fee
+  let weightNote = '';
+  if(oversizeTier === 2 && billableWeight < 90){
+    billableWeight = 90;
+    weightNote = '（超大件二级：计费重量下限按 90 lb 起算）';
+  }
+
+  const shippingWeightRaw = billableWeight + 0.25;
+  const shippingWeight = Math.ceil(shippingWeightRaw);
+
+  const baseFee = tierBaseFee(shippingWeight);
+  const oversizeFee = oversizeTier === 2 ? 20 : (oversizeTier === 1 ? 3 : 0);
+  const apparelFee = isApparel ? 0.50 : 0;
+  const hazmatFee = isHazmat ? 0.50 : 0;
+  const lowPriceFee = price < 10 ? 1.00 : 0;
+
+  const total = baseFee + oversizeFee + apparelFee + hazmatFee + lowPriceFee;
+
+  // render
+  const rows = [];
+  rows.push(`<tr><td>基础派送费</td><td>计费重量 ${shippingWeight} lb（体积重 ${dimWeight.toFixed(2)} lb，实重 ${unitWeight.toFixed(2)} lb ≈ ${weightKg.toFixed(2)} kg）</td><td>${money(baseFee)}</td></tr>`);
+  if(oversizeFee>0){
+    rows.push(`<tr><td>超大件附加费</td><td>${oversizeTier===2 ? '超大件二级（+$20）'+weightNote : '超大件一级（+$3）'}</td><td class="add">+${money(oversizeFee)}</td></tr>`);
+  }
+  if(apparelFee>0) rows.push(`<tr><td>服装附加费</td><td>商品为服装类</td><td class="add">+${money(apparelFee)}</td></tr>`);
+  if(hazmatFee>0) rows.push(`<tr><td>危险品附加费</td><td>含化学品/气雾剂/杀虫剂/电池</td><td class="add">+${money(hazmatFee)}</td></tr>`);
+  if(lowPriceFee>0) rows.push(`<tr><td>低价商品附加费</td><td>零售价低于 $10</td><td class="add">+${money(lowPriceFee)}</td></tr>`);
+
+  document.getElementById('feeBody').innerHTML = rows.join('');
+  document.getElementById('sumRow').innerHTML = `<td>合计</td><td></td><td>${money(total)}</td>`;
+  document.getElementById('totalFee').textContent = money(total);
+
+  const flags = [];
+  flags.push(isStandard
+    ? `<span class="flag flag-ok">标准尺寸商品</span>`
+    : `<span class="flag flag-bad">超出标准尺寸范围，需按大件/特殊物流核价</span>`);
+  if(oversizeTier>0){
+    flags.push(`<span class="flag flag-warn">${oversizeTier===2?'超大件二级':'超大件一级'}</span>`);
+  }
+  document.getElementById('flags').innerHTML = flags.join('');
+
+  document.getElementById('calcNote').innerHTML =
+    `输入尺寸 ${Lcm}×${Wcm}×${Hcm} cm ≈ ${L.toFixed(1)}×${W.toFixed(1)}×${H.toFixed(1)} in<br>` +
+    `最长边 ${longest.toFixed(1)} in ・ 中间边 ${median.toFixed(1)} in ・ 围长 2×(中+短) = ${girth.toFixed(1)} in ・ 最长边+围长 = ${longestPlusGirth.toFixed(1)} in<br>` +
+    `计费重量 = max(单位重量, 体积重量) + 0.25 lb 包材，向上取整 = ${shippingWeight} lb（Amazon 费率表以 in / lb 为单位，内部已自动换算）`;
+
+  document.getElementById('resultSection').classList.remove('hidden');
+}
+
+calcFee();
+</script>
+</body>
+</html>

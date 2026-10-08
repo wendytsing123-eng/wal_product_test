@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>广告花费计算器</title>
+<style>
+  :root{
+    --ink:#1B2430;
+    --ink-soft:#5B6472;
+    --bg:#F6F5F1;
+    --panel:#FFFFFF;
+    --line:#E4E1D9;
+    --accent:#0E7C7B;
+    --accent-soft:#E6F2F1;
+    --amber:#C97A1A;
+    --amber-soft:#FBF0DF;
+    --spend:#C6432B;
+    --spend-soft:#FBEAE5;
+    --sales:#2F8F5B;
+    --sales-soft:#E9F5EE;
+    --mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    padding:32px 16px 80px;
+    background:var(--bg);
+    font-family:var(--sans);
+    color:var(--ink);
+  }
+  .wrap{max-width:960px;margin:0 auto;}
+  .masthead{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    border-bottom:2px solid var(--ink);
+    padding-bottom:14px;
+    margin-bottom:28px;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+  .masthead h1{
+    font-size:22px;
+    margin:0;
+    letter-spacing:0.2px;
+  }
+  .masthead .tag{
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  section{margin-bottom:28px;}
+  .section-label{
+    font-size:13px;
+    color:var(--ink-soft);
+    margin:0 0 10px 2px;
+  }
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:20px;
+  }
+  /* ROAS calculator */
+  .roas-panel{
+    background:var(--amber-soft);
+    border:1px solid #EAD3AA;
+  }
+  .roas-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr auto;
+    gap:16px;
+    align-items:end;
+  }
+  @media (max-width:640px){
+    .roas-grid{grid-template-columns:1fr;}
+  }
+  label{
+    display:block;
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  input[type=number]{
+    width:100%;
+    padding:10px 12px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-size:15px;
+    font-family:var(--mono);
+    background:#fff;
+    color:var(--ink);
+  }
+  input[type=number]:focus{
+    outline:none;
+    border-color:var(--amber);
+  }
+  button{
+    font-family:var(--sans);
+    cursor:pointer;
+    border:none;
+  }
+  .btn-calc{
+    background:var(--ink);
+    color:#fff;
+    padding:11px 22px;
+    border-radius:6px;
+    font-size:14px;
+    white-space:nowrap;
+  }
+  .btn-calc:hover{background:#333d4d;}
+  .roas-result{
+    margin-top:16px;
+    background:var(--sales-soft);
+    border:1px solid #B9DFC7;
+    border-radius:8px;
+    padding:18px;
+    text-align:center;
+  }
+  .roas-result .big{
+    font-size:30px;
+    font-weight:700;
+    color:var(--sales);
+    font-family:var(--mono);
+  }
+  .roas-result .formula{
+    margin-top:6px;
+    font-size:12px;
+    color:var(--ink-soft);
+    font-family:var(--mono);
+  }
+  /* month cards */
+  .month-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:16px;
+  }
+  @media (max-width:760px){
+    .month-grid{grid-template-columns:1fr;}
+  }
+  .month-card{
+    border-radius:10px;
+    padding:18px;
+    border:1px solid var(--line);
+  }
+  .month-card:nth-child(1){background:#EEF3F9;border-color:#D2DEEC;}
+  .month-card:nth-child(2){background:var(--sales-soft);border-color:#C4E3D1;}
+  .month-card:nth-child(3){background:var(--amber-soft);border-color:#EAD3AA;}
+  .month-card h3{
+    margin:0 0 14px;
+    font-size:15px;
+  }
+  .month-card .field{margin-bottom:12px;}
+  .month-card .field:last-child{margin-bottom:0;}
+  .full-calc{
+    width:100%;
+    margin-top:20px;
+    padding:14px;
+    border-radius:8px;
+    background:var(--ink);
+    color:#fff;
+    font-size:15px;
+    letter-spacing:0.3px;
+  }
+  .full-calc:hover{background:#2b3646;}
+  /* results table */
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:14px;
+  }
+  th,td{
+    padding:10px 12px;
+    text-align:right;
+    border-bottom:1px solid var(--line);
+  }
+  th:first-child,td:first-child{text-align:left;}
+  th{
+    font-weight:600;
+    color:var(--ink-soft);
+    font-size:12px;
+    border-bottom:1px solid var(--ink);
+  }
+  td{font-family:var(--mono);}
+  tr.total-row td{
+    font-weight:700;
+    background:#F1EFE8;
+    border-top:2px solid var(--ink);
+    border-bottom:none;
+  }
+  td.spend{color:var(--spend);}
+  td.tacos-good{color:var(--sales);}
+  td.tacos-mid{color:var(--amber);}
+  td.tacos-bad{color:var(--spend);}
+  /* comparison + summary */
+  .compare-summary{
+    display:grid;
+    grid-template-columns:1.15fr 1fr;
+    gap:20px;
+  }
+  @media (max-width:760px){
+    .compare-summary{grid-template-columns:1fr;}
+  }
+  .compare-title{
+    font-size:14px;
+    font-weight:600;
+    margin:0 0 14px;
+  }
+  .bar-row{margin-bottom:16px;}
+  .bar-row:last-child{margin-bottom:0;}
+  .bar-row .bar-head{
+    display:flex;
+    justify-content:space-between;
+    font-size:13px;
+    margin-bottom:6px;
+  }
+  .bar-row .bar-head .tacos{
+    font-family:var(--mono);
+    color:var(--ink-soft);
+  }
+  .bar-track{
+    height:18px;
+    background:#EFEDE6;
+    border-radius:4px;
+    overflow:hidden;
+    display:flex;
+    margin-bottom:4px;
+  }
+  .bar-fill{
+    height:100%;
+  }
+  .bar-fill.spend-fill{background:var(--spend);}
+  .bar-fill.sales-fill{background:var(--sales);}
+  .bar-label{
+    font-size:11px;
+    color:var(--ink-soft);
+    display:flex;
+    justify-content:space-between;
+    font-family:var(--mono);
+  }
+  .bar-row.divider{
+    border-top:1px dashed var(--line);
+    padding-top:14px;
+    margin-top:14px;
+  }
+  .summary-cards{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .summary-card{
+    border-radius:8px;
+    padding:16px 18px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .summary-card .label{font-size:12px;color:var(--ink-soft);}
+  .summary-card .value{font-size:22px;font-weight:700;font-family:var(--mono);}
+  .summary-card .sub{font-size:12px;color:var(--ink-soft);margin-top:2px;text-align:right;}
+  .summary-card .sub b{color:var(--ink);font-family:var(--mono);}
+  .card-spend{background:var(--spend-soft);}
+  .card-spend .value{color:var(--spend);}
+  .card-roas{background:var(--sales-soft);}
+  .card-roas .value{color:var(--sales);}
+  .card-tacos{background:var(--amber-soft);}
+  .card-tacos .value{color:var(--amber);}
+  .rating-badge{
+    display:inline-block;
+    padding:2px 10px;
+    border-radius:20px;
+    font-size:12px;
+    font-weight:600;
+  }
+  .rating-good{background:#DCF3E4;color:var(--sales);}
+  .rating-ok{background:#DCEBF7;color:#2A6EA6;}
+  .rating-mid{background:var(--amber-soft);color:var(--amber);}
+  .rating-bad{background:var(--spend-soft);color:var(--spend);}
+  .formula-note{
+    margin-top:20px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:12px 16px;
+    font-size:12px;
+    color:var(--ink-soft);
+    font-family:var(--mono);
+    line-height:1.7;
+  }
+  .hidden{display:none;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>广告花费计算器</h1>
+    <div class="tag">ROAS · TACOS · 广告花费预测</div>
+  </div>
+
+  <!-- ROAS Calculator -->
+  <section>
+    <p class="section-label">ROAS 计算器</p>
+    <div class="panel roas-panel">
+      <div class="roas-grid">
+        <div>
+          <label for="attrPct">归因占比 (%)</label>
+          <input type="number" id="attrPct" value="60" step="1">
+        </div>
+        <div>
+          <label for="targetTacos">目标 TACOS (%)</label>
+          <input type="number" id="targetTacos" value="13" step="0.1">
+        </div>
+        <button class="btn-calc" onclick="calcRoas()">计算</button>
+      </div>
+      <div class="roas-result">
+        <div class="big" id="roasResult">所需 ROAS: 4.62</div>
+        <div class="formula" id="roasFormula">公式：ROAS = 归因占比 / 目标 TACOS = 60% / 13% = 4.62</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 month forecast inputs -->
+  <section>
+    <p class="section-label">未来三个月广告花费预测</p>
+    <div class="month-grid">
+      <div class="month-card">
+        <h3>第一个月</h3>
+        <div class="field">
+          <label>GMV 目标 ($)</label>
+          <input type="number" id="gmv1" value="200000">
+        </div>
+        <div class="field">
+          <label>ROAS 目标</label>
+          <input type="number" id="roas1" value="4.6" step="0.1">
+        </div>
+        <div class="field">
+          <label>归因占比 (%)</label>
+          <input type="number" id="attr1" value="60">
+        </div>
+      </div>
+      <div class="month-card">
+        <h3>第二个月</h3>
+        <div class="field">
+          <label>GMV 目标 ($)</label>
+          <input type="number" id="gmv2" value="300000">
+        </div>
+        <div class="field">
+          <label>ROAS 目标</label>
+          <input type="number" id="roas2" value="4.6" step="0.1">
+        </div>
+        <div class="field">
+          <label>归因占比 (%)</label>
+          <input type="number" id="attr2" value="55">
+        </div>
+      </div>
+      <div class="month-card">
+        <h3>第三个月</h3>
+        <div class="field">
+          <label>GMV 目标 ($)</label>
+          <input type="number" id="gmv3" value="400000">
+        </div>
+        <div class="field">
+          <label>ROAS 目标</label>
+          <input type="number" id="roas3" value="4.6" step="0.1">
+        </div>
+        <div class="field">
+          <label>归因占比 (%)</label>
+          <input type="number" id="attr3" value="50">
+        </div>
+      </div>
+    </div>
+    <button class="full-calc" onclick="calcForecast()">计算广告花费</button>
+  </section>
+
+  <!-- Results -->
+  <section id="resultsSection" class="hidden">
+    <p class="section-label">计算结果</p>
+    <div class="panel">
+      <table>
+        <thead>
+          <tr>
+            <th>月份</th><th>GMV目标</th><th>归因占比</th><th>ROAS目标</th>
+            <th>月度花费</th><th>日均花费</th><th>归因销售</th><th>TACOS</th>
+          </tr>
+        </thead>
+        <tbody id="resultsBody"></tbody>
+        <tfoot>
+          <tr class="total-row" id="totalRow"></tr>
+        </tfoot>
+      </table>
+    </div>
+  </section>
+
+  <!-- Compare + Summary -->
+  <section id="compareSection" class="hidden">
+    <div class="compare-summary">
+      <div class="panel">
+        <p class="compare-title">Ad Spend vs 归因销售对比</p>
+        <div id="barRows"></div>
+      </div>
+      <div class="summary-cards" id="summaryCards"></div>
+    </div>
+    <div class="formula-note">
+      公式：Ad Spend = (GMV × 归因占比) / ROAS &nbsp;|&nbsp; TACOS = Ad Spend / GMV × 100% &nbsp;|&nbsp; TACOS ≤15% 优秀 &nbsp;|&nbsp; ≤25% 良好 &nbsp;|&nbsp; ≤35% 偏高 &nbsp;|&nbsp; &gt;35% 过高
+    </div>
+  </section>
+
+</div>
+
+<script>
+function fmtMoney(n){
+  return '$' + n.toLocaleString('en-US', {maximumFractionDigits:0});
+}
+function fmtPct(n, digits=1){
+  return n.toFixed(digits) + '%';
+}
+function tacosRating(t){
+  if(t<=15) return {label:'优秀', cls:'rating-good'};
+  if(t<=25) return {label:'良好', cls:'rating-ok'};
+  if(t<=35) return {label:'偏高', cls:'rating-mid'};
+  return {label:'过高', cls:'rating-bad'};
+}
+function tacosCellClass(t){
+  if(t<=15) return 'tacos-good';
+  if(t<=25) return 'tacos-mid';
+  return 'tacos-bad';
+}
+
+function calcRoas(){
+  const attr = parseFloat(document.getElementById('attrPct').value) || 0;
+  const tacos = parseFloat(document.getElementById('targetTacos').value) || 0;
+  if(tacos === 0){
+    document.getElementById('roasResult').textContent = '请输入非零的目标 TACOS';
+    document.getElementById('roasFormula').textContent = '';
+    return;
+  }
+  const roas = attr / tacos;
+  document.getElementById('roasResult').textContent = '所需 ROAS: ' + roas.toFixed(2);
+  document.getElementById('roasFormula').textContent =
+    `公式：ROAS = 归因占比 / 目标 TACOS = ${attr}% / ${tacos}% = ${roas.toFixed(2)}`;
+}
+
+function calcForecast(){
+  const months = [1,2,3].map(i => {
+    const gmv = parseFloat(document.getElementById('gmv'+i).value) || 0;
+    const roas = parseFloat(document.getElementById('roas'+i).value) || 0;
+    const attr = parseFloat(document.getElementById('attr'+i).value) || 0;
+    const attrSales = gmv * (attr/100);
+    const spend = roas > 0 ? attrSales / roas : 0;
+    const daily = spend / 30;
+    const tacos = gmv > 0 ? (spend / gmv) * 100 : 0;
+    return {i, gmv, roas, attr, attrSales, spend, daily, tacos};
+  });
+
+  const body = document.getElementById('resultsBody');
+  body.innerHTML = months.map(m => `
+    <tr>
+      <td>第${m.i}个月</td>
+      <td>${fmtMoney(m.gmv)}</td>
+      <td>${m.attr}%</td>
+      <td>${m.roas.toFixed(2)}</td>
+      <td class="spend">${fmtMoney(m.spend)}</td>
+      <td>${fmtMoney(m.daily)}</td>
+      <td>${fmtMoney(m.attrSales)}</td>
+      <td class="${tacosCellClass(m.tacos)}">${fmtPct(m.tacos)}</td>
+    </tr>
+  `).join('');
+
+  const totalGmv = months.reduce((s,m)=>s+m.gmv,0);
+  const totalSpend = months.reduce((s,m)=>s+m.spend,0);
+  const totalSales = months.reduce((s,m)=>s+m.attrSales,0);
+  const totalDaily = totalSpend / 90;
+  const avgRoas = months.reduce((s,m)=>s+m.roas,0) / months.length;
+  const totalTacos = totalGmv > 0 ? (totalSpend/totalGmv)*100 : 0;
+  const combinedRoas = totalSpend > 0 ? totalSales / totalSpend : 0;
+
+  document.getElementById('totalRow').innerHTML = `
+    <td>3个月合计</td>
+    <td>${fmtMoney(totalGmv)}</td>
+    <td>—</td>
+    <td>${avgRoas.toFixed(2)}</td>
+    <td class="spend">${fmtMoney(totalSpend)}</td>
+    <td>${fmtMoney(totalDaily)}</td>
+    <td>${fmtMoney(totalSales)}</td>
+    <td class="${tacosCellClass(totalTacos)}">${fmtPct(totalTacos)}</td>
+  `;
+
+  // bar comparison
+  const maxVal = Math.max(...months.map(m=>m.attrSales), totalSales, 1);
+  const barRows = document.getElementById('barRows');
+  const rowHtml = (label, tacos, spend, sales) => `
+    <div class="bar-row">
+      <div class="bar-head"><span>${label}</span><span class="tacos">TACOS ${fmtPct(tacos)}</span></div>
+      <div class="bar-track"><div class="bar-fill spend-fill" style="width:${(spend/maxVal*100).toFixed(1)}%"></div></div>
+      <div class="bar-label"><span>Ad Spend</span><span>${fmtMoney(spend)}</span></div>
+      <div class="bar-track" style="margin-top:6px;"><div class="bar-fill sales-fill" style="width:${(sales/maxVal*100).toFixed(1)}%"></div></div>
+      <div class="bar-label"><span>归因销售</span><span>${fmtMoney(sales)}</span></div>
+    </div>
+  `;
+  barRows.innerHTML =
+    months.map(m => rowHtml('第' + m.i + '个月', m.tacos, m.spend, m.attrSales)).join('') +
+    `<div class="bar-row divider">` +
+    rowHtml('3个月合计', totalTacos, totalSpend, totalSales).replace('<div class="bar-row">','').replace(/<\/div>\s*$/,'') +
+    `</div>`;
+
+  // summary cards
+  const rating = tacosRating(totalTacos);
+  document.getElementById('summaryCards').innerHTML = `
+    <div class="summary-card card-spend">
+      <div><div class="label">3个月总广告花费</div><div class="value">${fmtMoney(totalSpend)}</div></div>
+      <div class="sub">日均<br><b>${fmtMoney(totalDaily)}</b></div>
+    </div>
+    <div class="summary-card card-roas">
+      <div><div class="label">3个月综合 ROAS</div><div class="value">${combinedRoas.toFixed(2)}x</div></div>
+      <div class="sub">归因销售<br><b>${fmtMoney(totalSales)}</b></div>
+    </div>
+    <div class="summary-card card-tacos">
+      <div><div class="label">3个月综合 TACOS</div><div class="value">${fmtPct(totalTacos)}</div></div>
+      <div class="sub">评级<br><span class="rating-badge ${rating.cls}">${rating.label}</span></div>
+    </div>
+  `;
+
+  document.getElementById('resultsSection').classList.remove('hidden');
+  document.getElementById('compareSection').classList.remove('hidden');
+}
+
+// initialize with default example values on load
+calcRoas();
+calcForecast();
+</script>
+</body>
+</html>

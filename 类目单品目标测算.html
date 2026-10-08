@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>类目单品目标测算</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #FAF9F5;
+    --paper-raised: #F2F0E8;
+    --ink: #23282E;
+    --ink-soft: #5B6169;
+    --rule: #D8D4C8;
+    --rule-strong: #B7B2A2;
+    --amber: #A8641F;
+    --amber-soft: #EFDFC7;
+    --teal: #35625A;
+    --teal-soft: #DCE7E1;
+    --red: #9C3B3B;
+    --font-serif: 'Source Serif 4', Georgia, 'Songti SC', serif;
+    --font-mono: 'IBM Plex Mono', 'SF Mono', Consolas, monospace;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #1C1E1B;
+      --paper-raised: #24261F;
+      --ink: #EDEAE1;
+      --ink-soft: #A6A398;
+      --rule: #3A3B33;
+      --rule-strong: #4C4D42;
+      --amber: #D9975A;
+      --amber-soft: #3A2E1C;
+      --teal: #7FAA9E;
+      --teal-soft: #1F2E29;
+      --red: #C97575;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #1C1E1B;
+    --paper-raised: #24261F;
+    --ink: #EDEAE1;
+    --ink-soft: #A6A398;
+    --rule: #3A3B33;
+    --rule-strong: #4C4D42;
+    --amber: #D9975A;
+    --amber-soft: #3A2E1C;
+    --teal: #7FAA9E;
+    --teal-soft: #1F2E29;
+    --red: #C97575;
+  }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-serif);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 52px 28px 100px;
+  }
+
+  header.page-head {
+    margin-bottom: 44px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  header.page-head .kicker {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+    color: var(--ink-soft);
+    margin: 0 0 10px;
+  }
+  header.page-head h1 {
+    font-size: 30px;
+    font-weight: 600;
+    margin: 0 0 12px;
+    letter-spacing: -0.01em;
+  }
+  header.page-head p {
+    font-size: 15.5px;
+    color: var(--ink-soft);
+    max-width: 62ch;
+    margin: 0;
+  }
+
+  section { margin-bottom: 44px; }
+
+  h2.sec-title {
+    font-size: 17px;
+    font-weight: 600;
+    margin: 0 0 4px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  h2.sec-title .num {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--amber);
+  }
+  .sec-sub {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin: 0 0 20px;
+  }
+
+  /* Rank input table */
+  .rank-table {
+    border-top: 1px solid var(--rule-strong);
+  }
+  .rank-row {
+    display: grid;
+    grid-template-columns: 30px 1fr 130px 150px;
+    gap: 14px;
+    align-items: center;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .rank-row .rk {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .rank-row label.name-label {
+    font-size: 14px;
+    color: var(--ink-soft);
+  }
+  input[type="text"], input[type="number"] {
+    width: 100%;
+    background: var(--paper-raised);
+    border: 1px solid var(--rule-strong);
+    border-radius: 3px;
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 14.5px;
+    padding: 8px 10px;
+  }
+  input[type="text"] { font-family: var(--font-serif); font-size: 14px; }
+  input:focus { outline: none; border-color: var(--amber); }
+  select {
+    width: 100%;
+    background: var(--paper-raised);
+    border: 1px solid var(--rule-strong);
+    border-radius: 3px;
+    color: var(--ink);
+    font-family: var(--font-serif);
+    font-size: 13.5px;
+    padding: 8px 8px;
+  }
+  select:focus { outline: none; border-color: var(--amber); }
+
+  .field-block { margin-bottom: 22px; }
+  .field-block .flabel {
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+    display: block;
+  }
+  .radio-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .radio-opt {
+    border: 1px solid var(--rule-strong);
+    border-radius: 3px;
+    padding: 9px 14px;
+    font-size: 13.5px;
+    cursor: pointer;
+    background: var(--paper-raised);
+    color: var(--ink-soft);
+    transition: border-color .15s, color .15s, background .15s;
+  }
+  .radio-opt.active {
+    border-color: var(--amber);
+    color: var(--ink);
+    background: var(--amber-soft);
+  }
+  .radio-opt input { display: none; }
+
+  .concentration-row {
+    display: grid;
+    grid-template-columns: 1fr 90px;
+    gap: 14px;
+    align-items: center;
+  }
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--amber);
+  }
+  .conc-hint {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+
+  .current-sales-row {
+    display: grid;
+    grid-template-columns: 1fr 160px;
+    gap: 14px;
+    align-items: center;
+  }
+
+  /* Results */
+  .result-summary {
+    background: var(--paper-raised);
+    border: 1px solid var(--rule-strong);
+    border-radius: 4px;
+    padding: 24px 26px;
+    margin-bottom: 24px;
+  }
+  .result-summary .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .stat-value .unit {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--ink-soft);
+    margin-left: 4px;
+  }
+  .stat-note {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+
+  table.target-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  table.target-table th {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 12px;
+    color: var(--ink-soft);
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--rule-strong);
+  }
+  table.target-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: top;
+  }
+  table.target-table td.num {
+    font-family: var(--font-mono);
+    text-align: right;
+    white-space: nowrap;
+  }
+  table.target-table tr.milestone td { color: var(--ink-soft); }
+  table.target-table tr.current-hit td { background: var(--teal-soft); }
+  .tier-tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: var(--amber-soft);
+    color: var(--amber);
+    white-space: nowrap;
+  }
+  .status-tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--teal);
+  }
+
+  .table-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 32px 0 4px;
+  }
+  .table-note {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin: 0 0 14px;
+  }
+
+  .warn-box {
+    border-left: 3px solid var(--red);
+    padding: 10px 16px;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    background: var(--paper-raised);
+    margin-top: 18px;
+    display: none;
+  }
+  .warn-box.show { display: block; }
+
+  footer.page-foot {
+    margin-top: 50px;
+    padding-top: 20px;
+    border-top: 1px solid var(--rule);
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+
+  @media (max-width: 560px) {
+    .wrap { padding: 36px 18px 80px; }
+    header.page-head h1 { font-size: 24px; }
+    .rank-row { grid-template-columns: 22px 1fr; row-gap: 8px; }
+    .rank-row .attr-select, .rank-row .sales-input { grid-column: 2 / 3; }
+    .result-summary .grid2 { grid-template-columns: 1fr; gap: 16px; }
+    .concentration-row, .current-sales-row { grid-template-columns: 1fr; }
+    table.target-table { font-size: 12.5px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page-head">
+    <p class="kicker">日销目标测算 · 3P 卖家</p>
+    <h1>类目单品目标测算</h1>
+    <p>输入类目 TOP1–5 的月销与属性,自动折算类目日销规模,并按 3P 对标(30/60/90/120%)、自营对标(15/25/35/50%)与市场份额分级两套框架,给出你的单品日销目标。</p>
+  </header>
+
+  <section id="sec-input">
+    <h2 class="sec-title"><span class="num">01</span> TOP1–5 数据</h2>
+    <p class="sec-sub">按销量从高到低填写,标记每个卖家是「自营/品牌方」还是「第三方卖家」——这决定了对标基准的选取。</p>
+
+    <div class="rank-table" id="rankTable"></div>
+  </section>
+
+  <section id="sec-params">
+    <h2 class="sec-title"><span class="num">02</span> 类目集中度</h2>
+    <p class="sec-sub">TOP1–5 通常只占类目总销量的一部分,剩下的由长尾卖家瓜分。拖动滑块设置 TOP1–5 占类目总量的比例。</p>
+
+    <div class="field-block">
+      <div class="radio-row" id="concentrationPreset">
+        <label class="radio-opt active" data-val="70"><input type="radio" name="concPreset">高集中度(品牌垄断,~70%)</label>
+        <label class="radio-opt" data-val="45"><input type="radio" name="concPreset">中等集中度(~45%)</label>
+        <label class="radio-opt" data-val="20"><input type="radio" name="concPreset">低集中度/长尾型(~20%)</label>
+        <label class="radio-opt" data-val="custom"><input type="radio" name="concPreset">自定义</label>
+      </div>
+      <div class="concentration-row">
+        <input type="range" id="concSlider" min="10" max="95" value="70">
+        <input type="number" id="concValue" min="10" max="95" value="70">
+      </div>
+      <p class="conc-hint" id="concHint">TOP1–5 占类目总销量约 70%,适用于品牌集中度高的类目(如本例 Stylus:onn + Apple 系列占大头)</p>
+    </div>
+
+    <div class="field-block">
+      <span class="flabel">你当前的单品日销(可选,用于标记你在框架中的位置)</span>
+      <div class="current-sales-row">
+        <input type="number" id="currentSales" placeholder="例如 70" min="0">
+        <span style="font-family: var(--font-mono); font-size: 13px; color: var(--ink-soft);">单/天</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="sec-results">
+    <h2 class="sec-title"><span class="num">03</span> 测算结果</h2>
+
+    <div class="result-summary">
+      <div class="grid2">
+        <div>
+          <div class="stat-label">TOP1–5 日销合计</div>
+          <div class="stat-value" id="top5DailySum">—<span class="unit">单/天</span></div>
+        </div>
+        <div>
+          <div class="stat-label">类目总日销(估算)</div>
+          <div class="stat-value" id="categoryDailyTotal">—<span class="unit">单/天</span></div>
+          <div class="stat-note" id="categoryDailyNote"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-title">对标框架 A · 类目整体市占率分级</div>
+    <p class="table-note" id="shareTableNote">你的单品日销占类目总日销的比例,决定你在类目里所处的水平——不需要选阶段,直接看你当前销量落在哪一档。</p>
+    <table class="target-table">
+      <thead><tr><th>水平</th><th>市占率区间</th><th class="num">对应日销</th><th>说明</th></tr></thead>
+      <tbody id="shareTableBody"></tbody>
+    </table>
+
+    <div class="table-title">对标框架 B · 按 3P TOP1 百分比</div>
+    <p class="table-note" id="p3TableNote"></p>
+    <table class="target-table">
+      <thead><tr><th>档位</th><th>占 3P TOP1</th><th class="num">对应日销</th><th>说明</th></tr></thead>
+      <tbody id="p3TableBody"></tbody>
+    </table>
+
+    <div class="table-title">对标框架 C · 按自营 TOP1 百分比</div>
+    <p class="table-note" id="selfTableNote"></p>
+    <table class="target-table">
+      <thead><tr><th>档位</th><th>占自营 TOP1</th><th class="num">对应日销</th><th>说明</th></tr></thead>
+      <tbody id="selfTableBody"></tbody>
+    </table>
+
+    <div class="warn-box" id="noP3Warn">类目 TOP1–5 中没有标记为「第三方卖家」的对手,框架 B 无法计算——请至少标记一个 3P 卖家作为对标对象。</div>
+    <div class="warn-box" id="noSelfWarn">类目 TOP1–5 中没有标记为「自营/品牌方」的对手,框架 C 无法计算。</div>
+  </section>
+
+  <footer class="page-foot">
+    测算基于你提供的 TOP1–5 月销数据与经验分级区间,仅作规划参考,不构成运营承诺。类目集中度与市场份额分级建议用工具(如 Helium10 / Jungle Scout)核实真实 TOP20 销量后再校准。
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  const names = ['TOP1','TOP2','TOP3','TOP4','TOP5'];
+  const rankTable = document.getElementById('rankTable');
+
+  const defaults = [
+    {sales: 1840, attr: 'self'},
+    {sales: 1551, attr: 'self'},
+    {sales: 1244, attr: 'self'},
+    {sales: 981,  attr: '3p'},
+    {sales: 569,  attr: 'self'}
+  ];
+
+  names.forEach((n, i) => {
+    const row = document.createElement('div');
+    row.className = 'rank-row';
+    row.innerHTML = `
+      <div class="rk">${i+1}</div>
+      <label class="name-label">${n} 月销量</label>
+      <input type="number" class="sales-input" data-idx="${i}" min="0" placeholder="月销" value="${defaults[i].sales}">
+      <select class="attr-select" data-idx="${i}">
+        <option value="self" ${defaults[i].attr==='self'?'selected':''}>自营 / 品牌方</option>
+        <option value="3p" ${defaults[i].attr==='3p'?'selected':''}>第三方卖家</option>
+      </select>
+    `;
+    rankTable.appendChild(row);
+  });
+
+  const concSlider = document.getElementById('concSlider');
+  const concValue = document.getElementById('concValue');
+  const concHint = document.getElementById('concHint');
+  const concPresetWrap = document.getElementById('concentrationPreset');
+  const currentSalesInput = document.getElementById('currentSales');
+
+  function setActiveRadio(wrap, targetEl) {
+    wrap.querySelectorAll('.radio-opt').forEach(el => el.classList.remove('active'));
+    targetEl.classList.add('active');
+  }
+
+  concPresetWrap.querySelectorAll('.radio-opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      setActiveRadio(concPresetWrap, opt);
+      const val = opt.getAttribute('data-val');
+      if (val !== 'custom') {
+        concSlider.value = val;
+        concValue.value = val;
+        updateConcHint(val);
+      }
+      compute();
+    });
+  });
+
+  function updateConcHint(val) {
+    let desc;
+    if (val >= 60) desc = '高集中度类目——品牌方/头部卖家占主导,留给长尾 3P 的空间有限';
+    else if (val >= 30) desc = '中等集中度类目——有几个知名玩家但未垄断,白牌仍有生存空间';
+    else desc = '低集中度/长尾型类目——品类分散,TOP20+ 才能覆盖大部分销量';
+    concHint.textContent = `TOP1–5 占类目总销量约 ${val}%,${desc}`;
+  }
+
+  concSlider.addEventListener('input', () => {
+    concValue.value = concSlider.value;
+    setActiveRadio(concPresetWrap, concPresetWrap.querySelector('[data-val="custom"]'));
+    updateConcHint(concSlider.value);
+    compute();
+  });
+  concValue.addEventListener('input', () => {
+    let v = Math.max(10, Math.min(95, Number(concValue.value) || 70));
+    concSlider.value = v;
+    setActiveRadio(concPresetWrap, concPresetWrap.querySelector('[data-val="custom"]'));
+    updateConcHint(v);
+    compute();
+  });
+
+  rankTable.addEventListener('input', compute);
+  rankTable.addEventListener('change', compute);
+  currentSalesInput.addEventListener('input', compute);
+
+  function fmt(n) {
+    if (n === null || n === undefined || isNaN(n)) return '—';
+    return n.toLocaleString('en-US', {maximumFractionDigits: 1});
+  }
+
+  const SHARE_TIERS = [
+    {label: '入门/试水期', minPct: 0, maxPct: 1, note: '新品刚上架,还在测试转化和关键词,正常状态'},
+    {label: '起步稳定期', minPct: 1, maxPct: 3, note: 'Listing已经跑通基础转化,广告能正向拉新单,进入正常经营轨道'},
+    {label: '良性增长期', minPct: 3, maxPct: 8, note: '大部分健康3P白牌卖家的"舒适区/天花板区间",能稳定占住一个细分份额,评价和排名进入前列(但不到头部)'},
+    {label: '强势3P', minPct: 8, maxPct: 15, note: '已经具备一定品牌认知或明显的价格/差异化优势,开始挤压腰部对手'},
+    {label: '类目挑战者', minPct: 15, maxPct: 25, note: '非常少见,通常需要长期投入+差异化壁垒,或者赶上类目内头部卖家出问题(断货、封号、掉评价)'},
+    {label: '类目主导', minPct: 25, maxPct: Infinity, note: '基本只有品牌方/平台自营才能达到,普通3P极难触及,除非类目本身极度分散、没有强势玩家'}
+  ];
+
+  function fmtPctRange(minPct, maxPct) {
+    if (minPct === 0) return `<${maxPct}%`;
+    if (maxPct === Infinity) return `>${minPct}%`;
+    return `${minPct}%–${maxPct}%`;
+  }
+
+  function fmtDailyRange(minPct, maxPct, base) {
+    if (!base) return '—';
+    const lo = base * minPct / 100;
+    if (minPct === 0) return `<${fmt(base * maxPct / 100)} 单/天`;
+    if (maxPct === Infinity) return `>${fmt(lo)} 单/天`;
+    return `${fmt(lo)}–${fmt(base * maxPct / 100)} 单/天`;
+  }
+
+  function renderShareTable(tbodyEl, tiers, base) {
+    tbodyEl.innerHTML = '';
+    const current = Number(currentSalesInput.value) || null;
+    const currentPct = (current !== null && base) ? (current / base) * 100 : null;
+    tiers.forEach(t => {
+      const tr = document.createElement('tr');
+      const inTier = currentPct !== null && currentPct >= t.minPct && currentPct < (t.maxPct === Infinity ? Infinity : t.maxPct);
+      if (inTier) tr.className = 'current-hit';
+      tr.innerHTML = `
+        <td>${t.label}</td>
+        <td><span class="tier-tag">${fmtPctRange(t.minPct, t.maxPct)}</span></td>
+        <td class="num">${fmtDailyRange(t.minPct, t.maxPct, base)}</td>
+        <td>${t.note}${inTier ? '  <span class="status-tag">← 你当前所处水平</span>' : ''}</td>
+      `;
+      tbodyEl.appendChild(tr);
+    });
+  }
+
+  const P3_TIERS = [
+    {label: '起步验证期', pct: 30, note: '验证转化与广告 ACOS,1–3 个月'},
+    {label: '爬坡期', pct: 60, note: '广告能正向拉动自然排名,3–6 个月'},
+    {label: '逼近对标', pct: 90, note: '价格/评价/差异化接近对手,6–12 个月'},
+    {label: '反超(长期)', pct: 120, note: '需评价数量/星级反超后再冲击,12 个月以上'}
+  ];
+
+  const SELF_TIERS = [
+    {label: '第一档', pct: 15, note: '相对自营的保守参考线'},
+    {label: '第二档', pct: 25, note: ''},
+    {label: '第三档', pct: 35, note: ''},
+    {label: '第四档', pct: 50, note: '自营通常有流量与成本优势,50% 已属乐观上限'}
+  ];
+
+  function renderTable(tbodyEl, tiers, base, unitLabelFn) {
+    tbodyEl.innerHTML = '';
+    const current = Number(currentSalesInput.value) || null;
+    let highlightIdx = -1;
+    if (current !== null && base) {
+      let best = -1;
+      tiers.forEach((t, i) => {
+        const target = base * t.pct / 100;
+        if (current >= target) best = i;
+      });
+      highlightIdx = best;
+    }
+    tiers.forEach((t, i) => {
+      const tr = document.createElement('tr');
+      const target = base ? base * t.pct / 100 : null;
+      if (i === highlightIdx) tr.className = 'current-hit';
+      tr.innerHTML = `
+        <td>${t.label}</td>
+        <td><span class="tier-tag">${t.pct}%</span></td>
+        <td class="num">${target !== null ? fmt(target) + ' 单/天' : '—'}</td>
+        <td>${t.note}${i === highlightIdx ? '  <span class="status-tag">← 你当前已达到</span>' : ''}</td>
+      `;
+      tbodyEl.appendChild(tr);
+    });
+  }
+
+  function compute() {
+    const salesInputs = Array.from(rankTable.querySelectorAll('.sales-input'));
+    const attrSelects = Array.from(rankTable.querySelectorAll('.attr-select'));
+
+    const entries = salesInputs.map((inp, i) => ({
+      monthly: Number(inp.value) || 0,
+      daily: (Number(inp.value) || 0) / 30.4,
+      attr: attrSelects[i].value
+    }));
+
+    const top5DailySum = entries.reduce((s, e) => s + e.daily, 0);
+    document.getElementById('top5DailySum').innerHTML = `${fmt(top5DailySum)}<span class="unit">单/天</span>`;
+
+    const concPct = Number(concSlider.value) || 70;
+    const categoryDailyTotal = concPct > 0 ? top5DailySum / (concPct / 100) : null;
+    document.getElementById('categoryDailyTotal').innerHTML = `${fmt(categoryDailyTotal)}<span class="unit">单/天</span>`;
+    document.getElementById('categoryDailyNote').textContent = `= TOP1–5 日销合计 ÷ ${concPct}%`;
+
+    // Share tiers (unified market-share bracket table)
+    const current = Number(currentSalesInput.value) || null;
+    const currentPct = (current !== null && categoryDailyTotal) ? (current / categoryDailyTotal * 100) : null;
+    document.getElementById('shareTableNote').textContent = current !== null && categoryDailyTotal
+      ? `类目总日销约 ${fmt(categoryDailyTotal)} 单/天,你当前 ${fmt(current)} 单/天 ≈ 市占率 ${fmt(currentPct)}%`
+      : `类目总日销约 ${fmt(categoryDailyTotal)} 单/天`;
+    renderShareTable(document.getElementById('shareTableBody'), SHARE_TIERS, categoryDailyTotal);
+
+    // 3P benchmark
+    const p3Entries = entries.filter(e => e.attr === '3p');
+    const p3Top1 = p3Entries.length ? Math.max(...p3Entries.map(e => e.daily)) : null;
+    document.getElementById('noP3Warn').classList.toggle('show', !p3Entries.length);
+    if (p3Top1 !== null) {
+      document.getElementById('p3TableNote').textContent = `3P TOP1 日销约 ${fmt(p3Top1)} 单/天`;
+      renderTable(document.getElementById('p3TableBody'), P3_TIERS, p3Top1);
+    } else {
+      document.getElementById('p3TableNote').textContent = '';
+      document.getElementById('p3TableBody').innerHTML = '';
+    }
+
+    // Self-operated benchmark
+    const selfEntries = entries.filter(e => e.attr === 'self');
+    const selfTop1 = selfEntries.length ? Math.max(...selfEntries.map(e => e.daily)) : null;
+    document.getElementById('noSelfWarn').classList.toggle('show', !selfEntries.length);
+    if (selfTop1 !== null) {
+      document.getElementById('selfTableNote').textContent = `自营/品牌方 TOP1 日销约 ${fmt(selfTop1)} 单/天`;
+      renderTable(document.getElementById('selfTableBody'), SELF_TIERS, selfTop1);
+    } else {
+      document.getElementById('selfTableNote').textContent = '';
+      document.getElementById('selfTableBody').innerHTML = '';
+    }
+  }
+
+  updateConcHint(70);
+  compute();
+})();
+</script>
+</body>
+</html>

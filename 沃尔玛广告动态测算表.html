@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>沃尔玛广告动态测算表</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #eef1f4;
+    --panel: #ffffff;
+    --panel-2: #f6f8fa;
+    --ink: #1b222c;
+    --ink-soft: #57616e;
+    --line: #d8dee4;
+    --accent: #1c3faa;
+    --accent-soft: #e7ecfb;
+    --amber: #c07f16;
+    --amber-soft: #fbf0dc;
+    --good: #2f6b46;
+    --good-soft: #e3f0e6;
+    --bad: #b23b30;
+    --bad-soft: #fae5e2;
+    --neutral: #6b6153;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    line-height: 1.5;
+    padding: 32px 20px 80px;
+  }
+
+  .wrap{ max-width: 1180px; margin: 0 auto; }
+
+  header.page{ margin-bottom: 28px; }
+  .eyebrow{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  h1{
+    font-family: var(--font-display);
+    font-size: clamp(24px, 3.4vw, 34px);
+    font-weight: 700;
+    margin: 0 0 8px;
+    letter-spacing: -0.01em;
+  }
+  .sub{
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    max-width: 720px;
+  }
+
+  .grid{
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 880px){
+    .grid{ grid-template-columns: 1fr; }
+  }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 22px;
+  }
+
+  .controls{ position: sticky; top: 20px; }
+
+  .field{ margin-bottom: 20px; }
+  .field:last-child{ margin-bottom: 0; }
+  .field label{
+    display:block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  select, input[type=number]{
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel-2);
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--ink);
+  }
+  select:focus, input:focus{ outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .seg{
+    display:flex;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow:hidden;
+  }
+  .seg button{
+    flex:1;
+    padding: 9px 6px;
+    border:none;
+    background: var(--panel-2);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink-soft);
+    cursor:pointer;
+    border-right: 1px solid var(--line);
+  }
+  .seg button:last-child{ border-right:none; }
+  .seg button.active{
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .slider-row{ display:flex; align-items:center; gap:10px; }
+  input[type=range]{
+    flex:1;
+    accent-color: var(--accent);
+  }
+  .slider-val{
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 46px;
+    text-align:right;
+    font-size: 14px;
+  }
+
+  .hint{
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 6px;
+    line-height:1.45;
+  }
+
+  /* Results side */
+  .cards{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 720px){ .cards{ grid-template-columns: 1fr; } }
+
+  .card{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  .card .k{
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+    margin-bottom: 6px;
+    font-weight:600;
+  }
+  .card .v{
+    font-family: var(--font-mono);
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.01em;
+  }
+  .card .v small{ font-size:14px; font-weight:600; color: var(--ink-soft); }
+  .card .note{ font-size: 12px; color: var(--ink-soft); margin-top: 6px; }
+
+  .section{
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px 22px;
+    margin-bottom: 18px;
+  }
+  .section h2{
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  .section .desc{
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+  }
+
+  table{ width:100%; border-collapse: collapse; font-size: 13.5px; }
+  th{
+    text-align:left;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  td{
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  tr:last-child td{ border-bottom: none; }
+  td.num{ font-family: var(--font-mono); font-weight:600; white-space:nowrap; }
+
+  .tag{
+    display:inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .tag.bad{ background: var(--bad-soft); color: var(--bad); }
+  .tag.warn{ background: var(--amber-soft); color: var(--amber); }
+  .tag.ok{ background: var(--accent-soft); color: var(--accent); }
+  .tag.good{ background: var(--good-soft); color: var(--good); }
+  .tag.great{ background: var(--good); color: #fff; }
+
+  /* Breakeven ruler - signature element */
+  .ruler-wrap{ margin-top: 4px; }
+  .ruler{
+    position: relative;
+    height: 54px;
+    border-radius: 8px;
+    overflow: hidden;
+    display:flex;
+    margin-bottom: 10px;
+  }
+  .ruler .zone{
+    position: relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+  }
+  .marker{
+    position:absolute;
+    top:-8px;
+    transform: translateX(-50%);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    transition: left 0.15s ease;
+  }
+  .marker .flag{
+    background: var(--ink);
+    color:#fff;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight:700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    white-space:nowrap;
+    margin-bottom: 3px;
+  }
+  .marker .stem{
+    width:2px; height: 62px; background: var(--ink);
+  }
+  .ruler-labels{
+    display:flex; justify-content:space-between;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    color: var(--ink-soft);
+    padding: 0 2px;
+  }
+
+  .formula{
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    background: var(--panel-2);
+    border: 1px dashed var(--line);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--ink-soft);
+    margin-top: 10px;
+  }
+  .formula b{ color: var(--ink); }
+
+  footer.note{
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align:center;
+    margin-top: 24px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page">
+    <div class="eyebrow">Walmart Connect · 动态判断阈值</div>
+    <h1>沃尔玛广告动态测算表</h1>
+    <div class="sub">输入你的品类、客单价、类目竞争度和毛利率，右侧所有判断阈值（曝光量分级 / CTR / CVR / ROAS·ACOS）会实时按你的实际情况重新计算，而不是套用统一的行业均值。</div>
+  </header>
+
+  <div class="grid">
+
+    <!-- LEFT: CONTROLS -->
+    <div class="panel controls">
+      <div class="field">
+        <label for="category">品类</label>
+        <select id="category"></select>
+        <div class="hint" id="categoryHint"></div>
+      </div>
+
+      <div class="field">
+        <label for="asp">客单价 ASP（美元）</label>
+        <input type="number" id="asp" min="1" step="1" value="25">
+        <div class="hint">客单价越高，转化率基准通常越低（决策链更长），同时可承受的CPC上限也更高。</div>
+      </div>
+
+      <div class="field">
+        <label>类目竞争度</label>
+        <div class="seg" id="competition">
+          <button data-val="low">低</button>
+          <button data-val="mid" class="active">中</button>
+          <button data-val="high">高</button>
+        </div>
+        <div class="hint">竞争度越高，CTR基准越低、CPC需求越高，判定"大词"的曝光门槛也会相应提高。</div>
+      </div>
+
+      <div class="field">
+        <label for="margin">毛利率</label>
+        <div class="slider-row">
+          <input type="range" id="margin" min="5" max="70" value="30">
+          <div class="slider-val"><span id="marginVal">30</span>%</div>
+        </div>
+        <div class="hint">这是最关键的输入 —— 盈亏平衡ACOS ≈ 毛利率，所有涨价/降价判断都围绕这条线展开。</div>
+      </div>
+    </div>
+
+    <!-- RIGHT: RESULTS -->
+    <div>
+
+      <div class="cards">
+        <div class="card">
+          <div class="k">盈亏平衡 ACOS</div>
+          <div class="v" id="beAcos">--</div>
+          <div class="note">= 你设定的毛利率</div>
+        </div>
+        <div class="card">
+          <div class="k">盈亏平衡 ROAS</div>
+          <div class="v" id="beRoas">--</div>
+          <div class="note">= 1 / 毛利率</div>
+        </div>
+        <div class="card">
+          <div class="k">单次点击最高可承受 CPC</div>
+          <div class="v" id="maxCpc">--</div>
+          <div class="note" id="maxCpcNote"></div>
+        </div>
+      </div>
+
+      <!-- ROAS / ACOS -->
+      <div class="section">
+        <h2>ROAS / ACOS 出价调整分级</h2>
+        <div class="desc">基于你的盈亏平衡线（毛利率）计算的五档区间，用来判断该涨价还是降价。</div>
+
+        <div class="ruler-wrap">
+          <div class="ruler" id="ruler"></div>
+          <div class="ruler-labels" id="rulerLabels"></div>
+        </div>
+
+        <table>
+          <thead><tr><th>ROAS 区间</th><th>对应 ACOS</th><th>状态</th><th>建议动作</th></tr></thead>
+          <tbody id="roasTable"></tbody>
+        </table>
+      </div>
+
+      <!-- CTR -->
+      <div class="section">
+        <h2>点击率 CTR 分级</h2>
+        <div class="desc">基准 CTR 已按你的品类与竞争度校准为 <b id="ctrBaseLabel" class="formula" style="display:inline;padding:2px 8px;">--</b></div>
+        <table>
+          <thead><tr><th>CTR 区间</th><th>状态</th><th>建议动作</th></tr></thead>
+          <tbody id="ctrTable"></tbody>
+        </table>
+      </div>
+
+      <!-- CVR -->
+      <div class="section">
+        <h2>转化率 CVR 分级</h2>
+        <div class="desc">基准 CVR 已按你的品类与客单价校准为 <b id="cvrBaseLabel" class="formula" style="display:inline;padding:2px 8px;">--</b></div>
+        <table>
+          <thead><tr><th>CVR 区间</th><th>状态</th><th>建议动作</th></tr></thead>
+          <tbody id="cvrTable"></tbody>
+        </table>
+      </div>
+
+      <!-- 曝光 -->
+      <div class="section">
+        <h2>曝光量分级（词的"大小"）</h2>
+        <div class="desc">已按类目竞争度调整门槛（竞争越高，需要更大搜索量才算"大词"）。</div>
+        <table>
+          <thead><tr><th>类型</th><th>日均曝光</th><th>操作优先级</th></tr></thead>
+          <tbody id="impTable"></tbody>
+        </table>
+      </div>
+
+      <div class="formula" id="formulaBox"></div>
+
+    </div>
+  </div>
+
+  <footer class="note">测算结果为经验模型估算，非沃尔玛官方数据 · 建议结合近30天真实账户数据校准</footer>
+</div>
+
+<script>
+const categories = {
+  grocery:     { label:'食品 / 快消 / 日用', ctr:0.008, cvr:0.12, cpc:[0.30,0.60] },
+  beauty:      { label:'美妆 / 个护',        ctr:0.007, cvr:0.09, cpc:[0.40,0.80] },
+  apparel:     { label:'服装 / 鞋帽',        ctr:0.006, cvr:0.07, cpc:[0.30,0.70] },
+  baby:        { label:'母婴 / 玩具',        ctr:0.007, cvr:0.08, cpc:[0.30,0.60] },
+  home:        { label:'家居 / 厨具',        ctr:0.006, cvr:0.06, cpc:[0.40,0.90] },
+  electronics: { label:'电子 / 数码',        ctr:0.005, cvr:0.05, cpc:[0.50,1.20] },
+  furniture:   { label:'家具 / 大件 / 工具', ctr:0.004, cvr:0.04, cpc:[0.60,1.50] },
+  other:       { label:'其他 / 自定义（均值）', ctr:0.006, cvr:0.07, cpc:[0.40,0.90] },
+};
+
+const compAdj = {
+  low:  { ctr:1.30, cpc:0.70, imp:0.70, label:'低' },
+  mid:  { ctr:1.00, cpc:1.00, imp:1.00, label:'中' },
+  high: { ctr:0.75, cpc:1.40, imp:1.50, label:'高' },
+};
+
+const sel = id => document.getElementById(id);
+const fmtPct = (x, d=2) => (x*100).toFixed(d) + '%';
+const fmtX = x => x.toFixed(2) + '×';
+
+// populate category select
+const catSel = sel('category');
+Object.entries(categories).forEach(([key, c]) => {
+  const opt = document.createElement('option');
+  opt.value = key; opt.textContent = c.label;
+  catSel.appendChild(opt);
+});
+catSel.value = 'home';
+
+let competition = 'mid';
+document.querySelectorAll('#competition button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#competition button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    competition = btn.dataset.val;
+    render();
+  });
+});
+
+sel('margin').addEventListener('input', () => {
+  sel('marginVal').textContent = sel('margin').value;
+  render();
+});
+sel('asp').addEventListener('input', render);
+catSel.addEventListener('change', render);
+
+function statusTag(cls, text){ return `<span class="tag ${cls}">${text}</span>`; }
+
+function render(){
+  const cat = categories[catSel.value];
+  const asp = Math.max(1, parseFloat(sel('asp').value) || 25);
+  const margin = parseFloat(sel('margin').value) / 100;
+  const comp = compAdj[competition];
+
+  sel('categoryHint').textContent = `该品类典型 CPC 区间约 $${cat.cpc[0].toFixed(2)}–$${cat.cpc[1].toFixed(2)}（未按竞争度调整前）`;
+
+  // ---- CVR base (adjust by ASP, reference ASP = 25) ----
+  const aspFactor = Math.min(1.5, Math.max(0.55, Math.pow(25/asp, 0.28)));
+  const cvrBase = cat.cvr * aspFactor;
+
+  // ---- CTR base (adjust by competition) ----
+  const ctrBase = cat.ctr * comp.ctr;
+
+  // ---- break-even ----
+  const beAcos = margin;
+  const beRoas = 1 / margin;
+  const maxCpc = asp * cvrBase * margin;
+
+  sel('beAcos').textContent = fmtPct(beAcos, 1);
+  sel('beRoas').innerHTML = beRoas.toFixed(2) + '<small> x</small>';
+  sel('maxCpc').textContent = '$' + maxCpc.toFixed(2);
+
+  const catCpcAdj = [cat.cpc[0]*comp.cpc, cat.cpc[1]*comp.cpc];
+  let cpcNote = `该品类调整后典型CPC约 $${catCpcAdj[0].toFixed(2)}–$${catCpcAdj[1].toFixed(2)}`;
+  if(maxCpc < catCpcAdj[0]){
+    cpcNote += ' — 低于市场CPC下限，当前客单价/毛利率组合下该品类广告难以打平';
+  } else if(maxCpc > catCpcAdj[1]){
+    cpcNote += ' — 高于市场CPC上限，出价有较大上探空间';
+  }
+  sel('maxCpcNote').textContent = cpcNote;
+
+  sel('formulaBox').innerHTML =
+    `<b>最高可承受CPC</b> = 客单价 × 转化率基准 × 毛利率 = $${asp} × ${fmtPct(cvrBase,1)} × ${fmtPct(margin,0)} = <b>$${maxCpc.toFixed(2)}</b>`;
+
+  // ================= ROAS / ACOS table =================
+  const roasRows = [
+    { mult:[0, 0.7],  label:'严重亏损', cls:'bad',  action:'立即降价10%~20%，或暂停该词，排查是否词不精准' },
+    { mult:[0.7, 1.0], label:'轻度亏损', cls:'warn', action:'小幅降价5%~10%，观察2~3天' },
+    { mult:[1.0, 1.0], label:'打平',    cls:'ok',   action:'维持出价，可接受作为引流款换排名/评价', isPoint:true },
+    { mult:[1.0, 1.5], label:'健康盈利', cls:'good', action:'可小幅提价5%~10%换更多曝光，测试量价平衡点' },
+    { mult:[1.5, 3.0], label:'高盈利（出价偏保守）', cls:'great', action:'大概率丢失展现份额，应提价扩量而非满足于高ROAS' },
+  ];
+  const roasBody = sel('roasTable');
+  roasBody.innerHTML = '';
+  roasRows.forEach(r => {
+    let roasLo = r.mult[0]*beRoas, roasHi = r.mult[1]*beRoas;
+    let roasLabel, acosLabel;
+    if(r.isPoint){
+      roasLabel = `≈ ${beRoas.toFixed(2)}x（±10%）`;
+      acosLabel = `≈ ${fmtPct(beAcos,1)}`;
+    } else if(r.mult[0] === 0){
+      roasLabel = `< ${roasHi.toFixed(2)}x`;
+      acosLabel = `> ${fmtPct(beAcos/r.mult[1],1)}`;
+    } else if(r.mult[1] === 3.0){
+      roasLabel = `> ${roasLo.toFixed(2)}x`;
+      acosLabel = `< ${fmtPct(beAcos/r.mult[0],1)}`;
+    } else {
+      roasLabel = `${roasLo.toFixed(2)}x – ${roasHi.toFixed(2)}x`;
+      acosLabel = `${fmtPct(beAcos/r.mult[1],1)} – ${fmtPct(beAcos/r.mult[0],1)}`;
+    }
+    roasBody.innerHTML += `<tr><td class="num">${roasLabel}</td><td class="num">${acosLabel}</td><td>${statusTag(r.cls, r.label)}</td><td>${r.action}</td></tr>`;
+  });
+
+  // ruler visualization: zones 0 - 3x breakeven roas mapped to 0-100%
+  const zoneDefs = [
+    {from:0, to:0.7, color:'var(--bad)'},
+    {from:0.7, to:1.0, color:'var(--amber)'},
+    {from:1.0, to:1.15, color:'var(--accent)'},
+    {from:1.15, to:1.5, color:'var(--good)'},
+    {from:1.5, to:2.2, color:'#1c4a2f'},
+  ];
+  const rulerMax = 2.2;
+  const ruler = sel('ruler');
+  ruler.innerHTML = '';
+  zoneDefs.forEach(z => {
+    const widthPct = (Math.min(z.to, rulerMax) - z.from) / rulerMax * 100;
+    const div = document.createElement('div');
+    div.className = 'zone';
+    div.style.width = widthPct + '%';
+    div.style.background = z.color;
+    ruler.appendChild(div);
+  });
+  const markerPos = Math.min(1, 1.0/rulerMax) * 100;
+  const marker = document.createElement('div');
+  marker.className = 'marker';
+  marker.style.left = markerPos + '%';
+  marker.innerHTML = `<div class="flag">盈亏平衡 ${beRoas.toFixed(2)}x</div><div class="stem"></div>`;
+  ruler.appendChild(marker);
+
+  sel('rulerLabels').innerHTML = `<span>0x</span><span>${(rulerMax/2).toFixed(1)}x</span><span>${rulerMax.toFixed(1)}x+</span>`;
+
+  // ================= CTR table =================
+  sel('ctrBaseLabel').textContent = fmtPct(ctrBase,2) + ' （行业基准中位）';
+  const ctrRows = [
+    { mult:[0, 0.5], label:'明显偏低', cls:'bad', action:'优先查主图/价格竞争力/评分星级，而非直接降出价' },
+    { mult:[0.5, 0.8], label:'偏弱', cls:'warn', action:'对比同词位竞品主图与价格带，做A/B测试' },
+    { mult:[0.8, 1.3], label:'正常', cls:'ok', action:'维持现状，观察转化再决定是否加预算' },
+    { mult:[1.3, 2.0], label:'良好', cls:'good', action:'listing竞争力强，可适当提价抢排名' },
+    { mult:[2.0, 999], label:'优秀', cls:'great', action:'重点扶持，加大预算/提价保排名' },
+  ];
+  const ctrBody = sel('ctrTable'); ctrBody.innerHTML='';
+  ctrRows.forEach(r=>{
+    let label;
+    if(r.mult[0]===0) label = `< ${fmtPct(ctrBase*r.mult[1],2)}`;
+    else if(r.mult[1]===999) label = `> ${fmtPct(ctrBase*r.mult[0],2)}`;
+    else label = `${fmtPct(ctrBase*r.mult[0],2)} – ${fmtPct(ctrBase*r.mult[1],2)}`;
+    ctrBody.innerHTML += `<tr><td class="num">${label}</td><td>${statusTag(r.cls,r.label)}</td><td>${r.action}</td></tr>`;
+  });
+
+  // ================= CVR table =================
+  sel('cvrBaseLabel').textContent = fmtPct(cvrBase,1) + ' （行业基准中位）';
+  const cvrRows = [
+    { mult:[0, 0.5], label:'承接能力差', cls:'bad', action:'先查详情页/评价数/价格，广告只是引流，问题多在listing本身' },
+    { mult:[0.5, 0.85], label:'偏低', cls:'warn', action:'检查是否词意图不精准，做否定关键词清理' },
+    { mult:[0.85, 1.3], label:'正常健康', cls:'ok', action:'可放心放量测试提价' },
+    { mult:[1.3, 2.0], label:'良好', cls:'good', action:'重点词，值得加预算' },
+    { mult:[2.0, 999], label:'优秀', cls:'great', action:'优先保证不断货、不丢Buy Box，通常是ROI最高的词' },
+  ];
+  const cvrBody = sel('cvrTable'); cvrBody.innerHTML='';
+  cvrRows.forEach(r=>{
+    let label;
+    if(r.mult[0]===0) label = `< ${fmtPct(cvrBase*r.mult[1],1)}`;
+    else if(r.mult[1]===999) label = `> ${fmtPct(cvrBase*r.mult[0],1)}`;
+    else label = `${fmtPct(cvrBase*r.mult[0],1)} – ${fmtPct(cvrBase*r.mult[1],1)}`;
+    cvrBody.innerHTML += `<tr><td class="num">${label}</td><td>${statusTag(r.cls,r.label)}</td><td>${r.action}</td></tr>`;
+  });
+
+  // ================= Impression table =================
+  const impBase = { big:1000, midLo:100, midHi:1000, smallLo:10, smallHi:100 };
+  const f = comp.imp;
+  const impRows = [
+    { label:'大词 / 核心词', range:`> ${Math.round(impBase.big*f)} 次/天`, action:'精细化管理，重点监控CTR/CVR，出价需跟上竞争强度' },
+    { label:'中词', range:`${Math.round(impBase.midLo*f)} – ${Math.round(impBase.midHi*f)} 次/天`, action:'主力测试词，适合结构化拓展' },
+    { label:'小词 / 长尾词', range:`${Math.round(impBase.smallLo*f)} – ${Math.round(impBase.smallHi*f)} 次/天`, action:'用来补量或做低成本转化测试' },
+    { label:'极低曝光', range:`< ${Math.round(impBase.smallLo*f)} 次/天`, action:'先查出价是否过低/是否被压制，1~2周无起色再淘汰' },
+  ];
+  const impBody = sel('impTable'); impBody.innerHTML='';
+  impRows.forEach(r=>{
+    impBody.innerHTML += `<tr><td>${r.label}</td><td class="num">${r.range}</td><td>${r.action}</td></tr>`;
+  });
+}
+
+render();
+</script>
+</body>
+</html>
